@@ -30,5 +30,6 @@ export async function updateSettings(formData: FormData) {
   if (error) return { error: error.message }
 
   revalidatePath('/configuracoes')
+  revalidatePath('/', 'layout')
   return { success: true }
 }
