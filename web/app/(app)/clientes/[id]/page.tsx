@@ -8,15 +8,20 @@ import { Calendar, Clock, FileText, Phone, Mail, User } from "lucide-react"
 import { format, parseISO } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { Badge } from "@/components/ui/badge"
+import { MedicalRecordForm } from "@/components/medical-record-form"
 
-export default async function CustomerProfilePage({ params }: { params: { id: string } }) {
+// MUDANÇA 1: A tipagem de params mudou para Promise
+export default async function CustomerProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const supabase = await createClient()
+
+  // MUDANÇA 2: Precisamos fazer o await de params antes de usar
+  const { id } = await params
 
   // 1. Buscar dados do Cliente
   const { data: customer } = await supabase
     .from('customers')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', id) // <--- Agora usamos o ID resolvido
     .single()
 
   if (!customer) {
@@ -27,8 +32,15 @@ export default async function CustomerProfilePage({ params }: { params: { id: st
   const { data: appointments } = await supabase
     .from('appointments')
     .select('*, services(title, color)')
-    .eq('customer_id', params.id)
+    .eq('customer_id', id)
     .order('start_time', { ascending: false })
+
+  // 3. Buscar Prontuários
+  const { data: records } = await supabase
+    .from('medical_records')
+    .select('*')
+    .eq('customer_id', id)
+    .order('created_at', { ascending: false })
 
   return (
     <div className="space-y-8">
@@ -82,7 +94,6 @@ export default async function CustomerProfilePage({ params }: { params: { id: st
               <div>
                 <span className="text-xs text-zinc-500 block">Cadastrado em</span>
                 <span className="text-sm">
-                  {/* CORREÇÃO AQUI: Se for null, usa a data atual como fallback para não quebrar */}
                   {format(new Date(customer.created_at || new Date()), "dd 'de' MMMM, yyyy", { locale: ptBR })}
                 </span>
               </div>
@@ -119,10 +130,8 @@ export default async function CustomerProfilePage({ params }: { params: { id: st
                 appointments.map((appt) => (
                   <Card key={appt.id} className="bg-zinc-900 border-zinc-800 hover:bg-zinc-900/80 transition-colors">
                     <CardContent className="flex items-center gap-4 p-4">
-                      {/* Data em Destaque */}
                       <div className="flex flex-col items-center justify-center bg-zinc-950 border border-zinc-800 rounded-lg h-16 w-16 min-w-[4rem]">
                         <span className="text-xs text-zinc-500 uppercase font-bold">
-                          {/* CORREÇÃO AQUI: Garantindo que start_time existe */}
                           {appt.start_time && format(parseISO(appt.start_time), 'MMM', { locale: ptBR })}
                         </span>
                         <span className="text-xl font-bold text-zinc-200">
@@ -130,7 +139,6 @@ export default async function CustomerProfilePage({ params }: { params: { id: st
                         </span>
                       </div>
 
-                      {/* Detalhes */}
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           {/* @ts-ignore */}
@@ -144,7 +152,6 @@ export default async function CustomerProfilePage({ params }: { params: { id: st
                         <div className="flex items-center gap-4 text-sm text-zinc-400">
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            {/* CORREÇÃO AQUI: */}
                             {appt.start_time && format(parseISO(appt.start_time), 'HH:mm')}
                           </span>
                           <span className="flex items-center gap-1 capitalize">
@@ -163,15 +170,49 @@ export default async function CustomerProfilePage({ params }: { params: { id: st
               )}
             </TabsContent>
 
-            <TabsContent value="records" className="mt-6">
-              <Card className="bg-zinc-900 border-zinc-800 border-dashed">
-                <CardContent className="flex flex-col items-center justify-center py-12 text-zinc-500">
-                  <FileText className="h-10 w-10 mb-4 opacity-50" />
-                  <p>Funcionalidade de Prontuário em desenvolvimento.</p>
-                  <Button variant="link" className="text-blue-500">Clique para adicionar nota rápida</Button>
-                </CardContent>
-              </Card>
-            </TabsContent>
+          <TabsContent value="records" className="mt-6 space-y-6">
+
+            {/* Formulário de Nova Anotação */}
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wider">Nova Evolução</h3>
+              <MedicalRecordForm customerId={id} />
+            </div>
+
+            {/* Lista de Histórico */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wider">Histórico Clínico</h3>
+
+              {!records?.length ? (
+                <div className="text-center py-8 border border-zinc-800 border-dashed rounded-lg">
+                  <p className="text-zinc-500 text-sm">Nenhuma anotação registrada.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {records.map((record) => (
+                    <Card key={record.id} className="bg-zinc-900 border-zinc-800">
+                      <CardHeader className="py-3 px-4 border-b border-zinc-800/50 bg-zinc-950/30">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6">
+                              <AvatarFallback className="text-[10px] bg-blue-900 text-blue-200">DR</AvatarFallback>
+                            </Avatar>
+                            <span className="text-xs font-bold text-zinc-300">Dr. Padrão</span>
+                          </div>
+                          <span className="text-xs text-zinc-500">
+                            {/* Verifica se created_at existe antes de tentar formatar */}
+                            {record.created_at && format(parseISO(record.created_at), "dd 'de' MMM 'às' HH:mm", { locale: ptBR })}
+                          </span>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="p-4 text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">
+                        {record.content}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
 
           </Tabs>
         </div>
