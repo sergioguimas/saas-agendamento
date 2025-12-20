@@ -9,6 +9,7 @@ import { format, parseISO } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { Badge } from "@/components/ui/badge"
 import { MedicalRecordForm } from "@/components/medical-record-form"
+import { MedicalRecordList } from "@/components/medical-record-list"
 
 // MUDANÇA 1: A tipagem de params mudou para Promise
 export default async function CustomerProfilePage({ params }: { params: Promise<{ id: string }> }) {
@@ -209,6 +210,7 @@ export default async function CustomerProfilePage({ params }: { params: Promise<
                       </CardContent>
                     </Card>
                   ))}
+                  <MedicalRecordList records={records || []} customerId={id} />
                 </div>
               )}
             </div>
