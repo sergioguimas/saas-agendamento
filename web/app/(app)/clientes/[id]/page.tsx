@@ -189,28 +189,8 @@ export default async function CustomerProfilePage({ params }: { params: Promise<
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {records.map((record) => (
-                    <Card key={record.id} className="bg-zinc-900 border-zinc-800">
-                      <CardHeader className="py-3 px-4 border-b border-zinc-800/50 bg-zinc-950/30">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-6 w-6">
-                              <AvatarFallback className="text-[10px] bg-blue-900 text-blue-200">DR</AvatarFallback>
-                            </Avatar>
-                            <span className="text-xs font-bold text-zinc-300">Dr. Padrão</span>
-                          </div>
-                          <span className="text-xs text-zinc-500">
-                            {/* Verifica se created_at existe antes de tentar formatar */}
-                            {record.created_at && format(parseISO(record.created_at), "dd 'de' MMM 'às' HH:mm", { locale: ptBR })}
-                          </span>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="p-4 text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">
-                        {record.content}
-                      </CardContent>
-                    </Card>
-                  ))}
-                  <MedicalRecordList records={records || []} customerId={id} />
+                  {/* Apenas chamamos o componente especializado uma vez */}
+                  <MedicalRecordList records={records} customerId={id} />
                 </div>
               )}
             </div>
