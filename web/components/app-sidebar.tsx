@@ -29,7 +29,7 @@ export function AppSidebar({ clinicName }: { clinicName: string }) {
   }
 
   return (
-    <div className="flex h-full flex-col border-r bg-zinc-950 text-zinc-100 w-64">
+    <div className="flex h-full flex-col bg-zinc-950 text-zinc-100 w-64">
       {/* HEADER ATUALIZADO 👇 */}
       <div className="p-6 border-b border-zinc-800 flex items-center gap-3">
         {/* Ícone com fundo sutil */}
