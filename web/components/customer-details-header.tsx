@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { EditCustomerDialog } from "@/components/edit-customer-dialog"
 import { deleteCustomer } from "@/app/actions/delete-customer"
 import { toast } from "sonner"
-import { ArrowLeft, Pencil, Trash2, Loader2, Phone, Mail } from "lucide-react"
+import { ArrowLeft, Pencil, Trash2, Loader2, Phone, Mail, Printer } from "lucide-react"
 
 interface CustomerDetailsHeaderProps {
   customer: {
@@ -84,6 +84,16 @@ export function CustomerDetailsHeader({ customer }: CustomerDetailsHeaderProps) 
         </div>
 
         <div className="flex items-center gap-2 self-end md:self-auto">
+          {/* --- Botão HISTÓRICO --- */}
+          <Button 
+            variant="outline" 
+            onClick={() => window.open(`/print/history/${customer.id}`, '_blank')}
+            className="border-zinc-800 text-zinc-300 hover:bg-zinc-900 gap-2 hidden md:flex"
+            title="Imprimir Histórico Completo"
+          >
+            <Printer className="h-4 w-4" />
+            <span className="hidden lg:inline">Histórico</span>
+          </Button>
           {/* Botão EDITAR */}
           <Button 
             variant="outline" 
