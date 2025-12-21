@@ -28,7 +28,8 @@ export async function createMedicalRecord(formData: FormData) {
   const { error } = await supabase.from('medical_records').insert({
     content,
     customer_id: customerId,
-    tenant_id: profile.tenant_id
+    tenant_id: profile.tenant_id,
+    doctor_id: user.id,
   })
 
   if (error) return { error: error.message }

@@ -201,10 +201,14 @@ export function MedicalRecordList({ records, customerId }: { records: any[], cus
                 
                 {isSigned ? (
                   // AÇÕES PARA ASSINADOS
-                  <Button 
-                    onClick={() => handlePrint(record)}
-                    variant="outline" size="sm" className="h-7 text-xs border-zinc-700 text-zinc-400 hover:text-zinc-200 gap-2">
-                    <Printer className="w-3 h-3" /> Exportar / Imprimir
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-zinc-400 hover:text-blue-400 hover:bg-blue-900/20"
+                    title="Imprimir Prontuário"
+                    onClick={() => window.open(`/print/record/${record.id}`, '_blank')} // Abre em nova aba
+                  >
+                    <Printer className="h-4 w-4" />
                   </Button>
                 ) : (
                   // AÇÕES PARA RASCUNHOS
