@@ -8,33 +8,30 @@ export default async function AppointmentsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return redirect("/login")
 
-  // 1. Buscar Pacientes (Para o Modal de Criação)
+  // 1. Buscar Pacientes (RLS filtra automaticamente)
   const { data: customers } = await supabase
     .from('customers')
     .select('id, name')
     .order('name')
 
-  // 2. Buscar Serviços (Para o Modal de Criação)
+  // 2. Buscar Serviços (RLS filtra automaticamente)
   const { data: services } = await supabase
     .from('services')
     .select('id, title, price')
     .eq('is_active', true)
     .order('title')
 
-  // 3. Buscar Agendamentos (Do mês atual e arredores)
-  // Dica: Num sistema grande, filtraríamos por data aqui. 
-  // No MVP, vamos pegar os futuros e recentes para simplificar a query.
+  // 3. Buscar Agendamentos
   const { data: appointments } = await supabase
     .from('appointments')
     .select(`
       id,
       start_time,
       end_time,
-      status,
+      status, 
       customers (name),
       services (title, color)
     `)
-    // @ts-ignore
     .order('start_time', { ascending: true })
 
   return (
@@ -44,7 +41,6 @@ export default async function AppointmentsPage() {
         <p className="text-zinc-400">Visualize e gerencie seus atendimentos.</p>
       </div>
 
-      {/* O componente visual cuida de tudo agora 👇 */}
       <CalendarView 
         // @ts-ignore
         appointments={appointments || []} 
