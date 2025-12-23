@@ -20,6 +20,7 @@ import { updateAppointmentStatus } from "@/app/actions/update-appointment-status
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { EditAppointmentDialog } from "./update-appointment-dialog"
+import { CancelAppointmentDialog } from "./cancel-appointment-dialog"
 
 interface AppointmentContextMenuProps {
   children: React.ReactNode
@@ -38,7 +39,8 @@ export function AppointmentContextMenu({
 }: AppointmentContextMenuProps) {
   
   const [loading, setLoading] = useState(false)
-  const [isEditOpen, setIsEditOpen] = useState(false) // Estado do Modal
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [isCancelOpen, setIsCancelOpen] = useState(false)
 
   const currentStatus = appointment.status || 'scheduled'
 
@@ -91,7 +93,6 @@ export function AppointmentContextMenu({
 
           <DropdownMenuSeparator className="bg-zinc-800" />
           
-          {/* Botão Editar: PreventDefault evita que o menu feche antes de setar o estado */}
           <DropdownMenuItem 
             className="focus:bg-zinc-800 cursor-pointer text-zinc-400"
             onSelect={(e) => {
@@ -102,7 +103,13 @@ export function AppointmentContextMenu({
             <Pencil className="mr-2 h-4 w-4" /> Editar Agendamento
           </DropdownMenuItem>
           
-          <DropdownMenuItem className="focus:bg-red-950/30 text-red-500 focus:text-red-400 cursor-pointer">
+          <DropdownMenuItem 
+            className="focus:bg-red-950/30 text-red-500 focus:text-red-400 cursor-pointer"
+            onSelect={(e) => {
+              e.preventDefault()
+              setIsCancelOpen(true)
+            }}
+          >
              <Trash2 className="mr-2 h-4 w-4" /> Cancelar / Excluir
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -118,6 +125,11 @@ export function AppointmentContextMenu({
           services={services}
         />
       )}
+      <CancelAppointmentDialog 
+        open={isCancelOpen}
+        onOpenChange={setIsCancelOpen}
+        appointmentId={appointment.id}
+      />
     </>
   )
 }
