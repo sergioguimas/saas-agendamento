@@ -2,7 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server"
 
-const EVOLUTION_URL = process.env.EVOLUTION_API_URL || "http://127.0.0.1:8080"
+const EVOLUTION_URL = process.env.EVOLUTION_API_URL || "http://127.0.0.1:8082"
 const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || "medagenda123"
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
@@ -26,16 +26,14 @@ export async function createWhatsappInstance() {
   console.log("🚀 Iniciando verificação para:", instanceName)
 
   try {
-    // 1. Tenta apenas BUSCAR a conexão primeiro
-    console.log("🔍 Verificando se instância já existe...")
+    console.log("🔍 Buscando instância...")
     const checkResponse = await fetch(`${EVOLUTION_URL}/instance/connect/${instanceName}`, {
         method: 'GET',
         headers: { 'apikey': EVOLUTION_API_KEY }
     })
     
-    // Se deu erro na busca (404/400), criamos.
     if (checkResponse.status !== 200) {
-        console.log("🛠️ Instância não encontrada. Criando nova...")
+        console.log("🛠️ Instância não encontrada. Criando...")
         
         const createResponse = await fetch(`${EVOLUTION_URL}/instance/create`, {
             method: 'POST',
@@ -51,31 +49,27 @@ export async function createWhatsappInstance() {
             })
         })
         
-        // Log para debug
         if (!createResponse.ok) {
-            const errText = await createResponse.text()
-            console.error("Erro na criação:", errText)
-            return { error: "Erro ao criar instância na API." }
+             const errorText = await createResponse.text()
+             console.error("Erro na criação:", errorText)
+        } else {
+             console.log("📦 Status Criação: Sucesso (201)")
         }
-
-        const createData = await createResponse.json()
-        console.log("📦 Status Criação:", createResponse.status)
     } else {
-        console.log("✅ Instância já existe e está rodando. Buscando QR Code...")
+        console.log("✅ Instância já existe. Buscando QR Code...")
     }
 
-    // 2. Entra no loop de busca
     return await connectInstance(instanceName, profile.tenant_id)
 
   } catch (error) {
     console.error("❌ Erro Fatal:", error)
-    return { error: "Falha de comunicação com a API (Verifique Docker e URL)." }
+    return { error: "Falha de comunicação. Verifique se o Docker está rodando na porta 8081." }
   }
 }
 
 async function connectInstance(instanceName: string, tenantId: string) {
     let attempts = 0
-    const maxAttempts = 15 
+    const maxAttempts = 30 
 
     while (attempts < maxAttempts) {
         attempts++
@@ -101,13 +95,11 @@ async function connectInstance(instanceName: string, tenantId: string) {
                 return { success: true, connected: true }
             }
 
-            if (attempts < maxAttempts) {
-                await delay(3000)
-            }
+            if (attempts < maxAttempts) await delay(5000)
 
         } catch (e) {
             console.error("Erro na busca:", e)
-            await delay(3000)
+            await delay(5000)
         }
     }
 
