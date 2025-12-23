@@ -33,7 +33,12 @@ export async function createWhatsappInstance() {
     })
     
     if (checkResponse.status !== 200) {
-        console.log("🛠️ Instância não encontrada. Criando...")
+        console.log("🛠️ Instância não encontrada ou com erro. Tentando recriar...")
+
+        await fetch(`${EVOLUTION_URL}/instance/delete/${instanceName}`, {
+            method: 'DELETE',
+            headers: { 'apikey': EVOLUTION_API_KEY }
+        });
         
         const createResponse = await fetch(`${EVOLUTION_URL}/instance/create`, {
             method: 'POST',
