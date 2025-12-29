@@ -1,14 +1,16 @@
 'use server'
 
-import { createClient } from '@/utils/supabase/server'
-import { createClient as createSupabaseAdmin } from '@supabase/supabase-js' // Importamos o cliente JS puro para modo Admin
+import { createClient } from '@/utils/supabase/server' // Confirme seu caminho de importação
+import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 
-export async function login(formData: FormData) {
-  const supabase = await createClient()
-  
+// Função de Login
+export async function signIn(formData: FormData) {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
+  
+  const supabase = await createClient() // Await aqui
 
   const { error } = await supabase.auth.signInWithPassword({
     email,
@@ -16,64 +18,104 @@ export async function login(formData: FormData) {
   })
 
   if (error) {
+    return { error: 'Credenciais inválidas.' }
+  }
+
+  return { success: true }
+}
+
+// Função de Cadastro
+export async function signUp(formData: FormData) {
+  const headersList = await headers() 
+  const origin = headersList.get('origin')
+  // ---------------------
+
+  const email = formData.get('email') as string
+  const password = formData.get('password') as string
+  const fullName = formData.get('fullName') as string
+  
+  const supabase = await createClient() // Await aqui
+
+  const { error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        full_name: fullName,
+      },
+      emailRedirectTo: `${origin}/auth/callback`,
+    },
+  })
+
+  if (error) {
     return { error: error.message }
   }
 
-  redirect('/')
+  return { success: 'Verifique seu email para confirmar o cadastro.' }
 }
 
-export async function signup(formData: FormData) {
-  // 1. Cliente Normal (para criar o login Auth)
-  const supabase = await createClient()
+// Função de Criar Empresa
+export async function createCompany(formData: FormData) {
+  const supabase = await createClient() // Await aqui
   
-  // 2. Cliente Admin (para criar os dados no banco sem travas de segurança)
-  const supabaseAdmin = createSupabaseAdmin(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return { error: 'Usuário não autenticado.' }
+  }
+
+  const companyName = formData.get('companyName') as string
+  
+  const slug = companyName.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-') + '-' + Math.floor(Math.random() * 10000)
+
+  // Agora usando 'organizations' corretamente
+  const { data: org, error: orgError } = await supabase
+    .from('organizations') 
+    .insert({
+      name: companyName,
+      slug: slug,
+      industry: 'medical', 
+      settings: {
+        theme: 'blue',
+        labels: {
+          staff: 'Profissional',
+          client: 'Cliente'
+        }
       }
-    }
-  )
-  
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
-  const name = formData.get('name') as string
-
-  // --- A. Criar Usuário Auth (Usando cliente normal) ---
-  const { data: authData, error: authError } = await supabase.auth.signUp({
-    email,
-    password,
-  })
-
-  if (authError) return { error: authError.message }
-  if (!authData.user) return { error: "Erro ao criar usuário" }
-
-  // --- B. Criar Tenant (Usando ADMIN para garantir permissão) ---
-  const tenantName = `${name}'s Business`
-  const tenantSlug = name.toLowerCase().replace(/\s+/g, '-') + '-' + Math.floor(Math.random() * 1000)
-
-  const { data: tenant, error: tenantError } = await supabaseAdmin
-    .from('tenants')
-    .insert({ name: tenantName, slug: tenantSlug })
+    })
     .select()
     .single()
 
-  if (tenantError) return { error: "Erro ao criar empresa: " + tenantError.message }
+  if (orgError) {
+    console.error('Erro ao criar organização:', orgError)
+    return { error: 'Erro ao criar a empresa. Tente outro nome.' }
+  }
 
-  // --- C. Criar Perfil (Usando ADMIN) ---
-  const { error: profileError } = await supabaseAdmin
+  const { error: profileError } = await supabase
     .from('profiles')
-    .insert({
-      id: authData.user.id, // ID do usuário que acabamos de criar
-      full_name: name,
-      tenant_id: tenant.id,
-      role: 'owner'
+    .update({
+      organization_id: org.id,
+      role: 'owner',
+      metadata: {
+        onboarding_completed: true
+      }
     })
+    .eq('id', user.id)
 
-  if (profileError) return { error: "Erro ao criar perfil: " + profileError.message }
+  if (profileError) {
+    console.error('Erro ao atualizar perfil:', profileError)
+    return { error: 'Empresa criada, mas houve um erro ao vincular seu perfil.' }
+  }
 
-  redirect('/')
+  revalidatePath('/', 'layout')
+  return redirect('/dashboard')
+}
+
+// Função de Logout
+export async function signOut() {
+  const supabase = await createClient() // Await aqui
+  await supabase.auth.signOut()
+  return redirect('/auth/login')
 }

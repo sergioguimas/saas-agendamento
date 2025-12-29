@@ -6,26 +6,41 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
-import { login, signup } from '../actions/auth'
+import { signIn, signUp } from '../actions/auth'
 import { Stethoscope } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true)
   const [loading, setLoading] = useState(false)
+  const router = useRouter()
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setLoading(true)
     
     const formData = new FormData(event.currentTarget)
-    const action = isLogin ? login : signup
+    const action = isLogin ? signIn : signUp
 
     try {
-      const result = await action(formData)
+      const result = await action(formData) as any
+
       if (result?.error) {
         toast.error(result.error)
+      } else if (result?.success) {
+        // Sucesso!
+        if (isLogin) {
+          // Se for login, redireciona para o dashboard
+          router.push('/dashboard')
+          router.refresh() // Garante que os dados do usuário atualizem
+        } else {
+          // Se for cadastro, mostra a mensagem
+          toast.success(result.success as string)
+          setIsLogin(true) // Opcional: Joga o usuário para a tela de login
+        }
       }
     } catch (e) {
+      console.error(e)
       toast.error("Ocorreu um erro inesperado")
     } finally {
       setLoading(false)
@@ -33,7 +48,9 @@ export default function LoginPage() {
   }
 
   return (
+    // ... O restante do seu JSX continua igual (Input name="fullName", etc)
     <div className="min-h-screen flex items-center justify-center bg-zinc-950 p-4">
+      {/* ... conteúdo igual ao anterior ... */}
       <div className="absolute top-8 left-8 flex items-center gap-2 text-blue-500 font-bold text-xl">
         <Stethoscope className="h-6 w-6" />
         MedAgenda
@@ -54,8 +71,14 @@ export default function LoginPage() {
           <CardContent className="space-y-4">
             {!isLogin && (
               <div className="space-y-2">
-                <Label htmlFor="name">Nome da Clínica / Médico</Label>
-                <Input id="name" name="name" placeholder="Ex: Clínica Saúde Total" required className="bg-zinc-950 border-zinc-800 focus:ring-blue-600" />
+                <Label htmlFor="fullName">Nome da Clínica / Médico</Label>
+                <Input 
+                  id="fullName" 
+                  name="fullName" 
+                  placeholder="Ex: Clínica Saúde Total" 
+                  required 
+                  className="bg-zinc-950 border-zinc-800 focus:ring-blue-600" 
+                />
               </div>
             )}
             <div className="space-y-2">
