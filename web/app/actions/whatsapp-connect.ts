@@ -9,77 +9,66 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
 export async function createWhatsappInstance() {
   const supabase = await createClient()
-
+  
+  // Pegando usuário para garantir segurança, mas usaremos nome fixo para teste
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "Usuário não autenticado" }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('tenant_id')
-    .eq('id', user.id)
-    .single()
+  // NOME DA INSTÂNCIA FIXO E LIMPO
+  const instanceName = "medagenda_v3" 
 
-  if (!profile?.tenant_id) return { error: "Clínica não encontrada" }
-
-  const instanceName = profile.tenant_id
-
-  console.log("🚀 Iniciando verificação para:", instanceName)
+  console.log("🚀 [Evolution v3] Iniciando:", instanceName)
 
   try {
-    console.log("🔍 Buscando instância...")
-    const checkResponse = await fetch(`${EVOLUTION_URL}/instance/connect/${instanceName}`, {
-        method: 'GET',
-        headers: { 'apikey': EVOLUTION_API_KEY }
-    })
+    // 1. Tenta criar a instância com CONFIGURAÇÃO ZERO SYNC
+    // Não verificamos se existe antes, tentamos criar. Se existir, a API avisa e nós conectamos.
     
-    if (checkResponse.status !== 200) {
-        console.log("🛠️ Instância não encontrada ou com erro. Tentando recriar...")
-
-        await fetch(`${EVOLUTION_URL}/instance/delete/${instanceName}`, {
-            method: 'DELETE',
-            headers: { 'apikey': EVOLUTION_API_KEY }
-        });
-        
-        const createResponse = await fetch(`${EVOLUTION_URL}/instance/create`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': EVOLUTION_API_KEY
-            },
-            body: JSON.stringify({
-                instanceName: instanceName,
-                token: instanceName,
-                qrcode: true,
-                integration: "WHATSAPP-BAILEYS" 
-            })
+    const createResponse = await fetch(`${EVOLUTION_URL}/instance/create`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'apikey': EVOLUTION_API_KEY
+        },
+        body: JSON.stringify({
+            instanceName: instanceName,
+            token: instanceName,
+            qrcode: true,
+            integration: "WHATSAPP-BAILEYS",
+            
+            reject_call: true,
+            groupsIgnore: true,
+            alwaysOnline: false,
+            readMessages: false,
+            readStatus: false,
+            syncFullHistory: false,
+            
+            // Navegador Padrão Estável
+            browser: ["Ubuntu", "Chrome", "110.0.5481.177"]
         })
-        
-        if (!createResponse.ok) {
-             const errorText = await createResponse.text()
-             console.error("Erro na criação:", errorText)
-        } else {
-             console.log("📦 Status Criação: Sucesso (201)")
-        }
-    } else {
-        console.log("✅ Instância já existe. Buscando QR Code...")
+    })
+
+    const createData = await createResponse.json()
+    
+    // Se erro for "já existe", tudo bem. Se for outro erro, loga.
+    if (!createResponse.ok && createData?.response?.message?.[0] !== "Instance already exists") {
+        console.log("⚠️ Aviso na criação:", createData)
     }
 
-    return await connectInstance(instanceName, profile.tenant_id)
+    // 2. Busca o QR Code (Loop de 60 segundos)
+    return await fetchQrCodeLoop(instanceName)
 
   } catch (error) {
-    console.error("❌ Erro Fatal:", error)
-    return { error: "Falha de comunicação. Verifique se o Docker está rodando na porta 8081." }
+    console.error("❌ Erro Crítico:", error)
+    return { error: "Erro de conexão com API" }
   }
 }
 
-async function connectInstance(instanceName: string, tenantId: string) {
+async function fetchQrCodeLoop(instanceName: string) {
     let attempts = 0
     const maxAttempts = 30 
 
     while (attempts < maxAttempts) {
         attempts++
-        console.log(`⏳ Aguardando QR Code... (${attempts}/${maxAttempts})`)
-
         try {
             const response = await fetch(`${EVOLUTION_URL}/instance/connect/${instanceName}`, {
                 method: 'GET',
@@ -88,34 +77,23 @@ async function connectInstance(instanceName: string, tenantId: string) {
             
             const data = await response.json()
 
-            if (data.base64) {
-                console.log("✅ QR Code CAPTURADO!")
-                await saveStatus(instanceName, tenantId, 'qrcode')
+            // QR Code Disponível
+            if (data.base64 || (data.code && data.code !== 200)) { 
+                console.log("📸 QR Code Recebido!")
                 return { success: true, qrcode: data.base64, code: data.code }
             }
             
-            if (data.instance?.status === 'open' || data.instance?.state === 'open') {
-                console.log("✅ CONECTADO!")
-                await saveStatus(instanceName, tenantId, 'connected')
+            // Já Conectado
+            if (data.instance?.status === 'open') {
                 return { success: true, connected: true }
             }
 
-            if (attempts < maxAttempts) await delay(5000)
+            console.log(`⏳ Aguardando QR Code... (${attempts}/${maxAttempts})`)
+            await delay(3000)
 
         } catch (e) {
-            console.error("Erro na busca:", e)
-            await delay(5000)
+            await delay(3000)
         }
     }
-
-    return { error: "Tempo esgotado. Tente novamente." }
-}
-
-async function saveStatus(instance: string, tenant: string, status: string) {
-    const supabase = await createClient()
-    // @ts-ignore
-    await supabase.from('whatsapp_config').upsert(
-        { tenant_id: tenant, instance_name: instance, status: status },
-        { onConflict: 'tenant_id' }
-    )
+    return { error: "Timeout: O servidor demorou para gerar o QR Code." }
 }
