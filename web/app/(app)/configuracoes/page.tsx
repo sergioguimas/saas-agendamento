@@ -12,7 +12,6 @@ export default async function SettingsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return redirect("/login")
   
-  // CORREÇÃO: Buscando 'organizations' em vez de 'tenants'
   const { data: profile } = await supabase
     .from('profiles')
     .select('*, organizations(*)')
@@ -53,7 +52,6 @@ export default async function SettingsPage() {
         </TabsList>
 
         <TabsContent value="clinic">
-          {/* Passamos a organização como 'tenant' para o form antigo funcionar */}
           <SettingsForm tenant={organization} />
         </TabsContent>
 
