@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { QrCode, Smartphone, Loader2, CheckCircle2, RefreshCw, Trash2 } from "lucide-react"
+import { QrCode, Smartphone, Loader2, CheckCircle2, RefreshCw } from "lucide-react"
 import { createWhatsappInstance, deleteWhatsappInstance } from "@/app/actions/whatsapp-connect"
 import { toast } from "sonner"
 
@@ -12,14 +12,17 @@ export function WhatsappSettings() {
   const [qrCode, setQrCode] = useState<string | null>(null)
   const [isConnected, setIsConnected] = useState(false)
 
-  // Função para limpar tudo
+  // Função para limpar tudo (Reset Nuclear)
   async function handleReset() {
+    // Confirmação simples antes de resetar
+    if(!confirm("Tem certeza? Isso irá desconectar o WhatsApp da clínica.")) return;
+    
     setLoading(true)
     try {
         await deleteWhatsappInstance()
         setQrCode(null)
         setIsConnected(false)
-        toast.success("Instância resetada. Tente gerar o QR Code novamente.")
+        toast.success("Conexão resetada com sucesso.")
     } catch (e) {
         toast.error("Erro ao resetar.")
     } finally {
@@ -32,15 +35,15 @@ export function WhatsappSettings() {
     setQrCode(null) 
     
     try {
+      // --- CORREÇÃO AQUI: Adicionamos 'as any' para evitar o erro de TypeScript ---
       const result = await createWhatsappInstance() as any
 
       if (result.error) {
-        // Se der erro, mostramos o erro mas permitimos tentar de novo
         toast.error(result.error)
-        setLoading(false)
         return
       }
 
+      // Agora o TS aceita acessar .connected e .qrcode
       if (result.connected) {
         setIsConnected(true)
         setQrCode(null)
@@ -98,9 +101,8 @@ export function WhatsappSettings() {
                   </Button>
               </div>
           ) : (
-              /* ESTADO: DESCONECTADO OU QR CODE */
+              /* ESTADO: DESCONECTADO */
               <div className="flex flex-col items-center justify-center space-y-6 py-4">
-                  
                   {!qrCode ? (
                       <div className="text-center space-y-4 flex flex-col items-center">
                           <p className="text-sm text-zinc-400 max-w-md mx-auto">
@@ -123,45 +125,23 @@ export function WhatsappSettings() {
                                 </>
                               )}
                           </Button>
-
-                          {/* Botão de Emergência para limpar estado zumbi */}
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
+                          
+                          {/* Link discreto para resetar em caso de erro */}
+                          <button 
                             onClick={handleReset}
-                            disabled={loading}
-                            className="text-xs text-zinc-600 hover:text-red-400 hover:bg-transparent"
+                            className="text-xs text-zinc-700 hover:text-zinc-500 mt-2 underline"
                           >
-                            <Trash2 className="w-3 h-3 mr-1" />
-                            Resetar Conexão Travada
-                          </Button>
+                            Resetar conexão travada
+                          </button>
                       </div>
                   ) : (
                       <div className="text-center space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                            <div className="bg-white p-4 rounded-xl inline-block shadow-xl shadow-green-900/10 border-4 border-white">
                               <img src={qrCode} alt="QR Code WhatsApp" className="w-64 h-64 object-contain" />
                            </div>
-                           
-                           <div className="space-y-1">
-                             <p className="text-sm font-medium text-zinc-300">
-                                  Abra o WhatsApp &gt; Configurações &gt; Aparelhos Conectados
-                             </p>
-                           </div>
-
                            <div className="flex gap-3 justify-center pt-2">
-                             <Button 
-                                variant="ghost" 
-                                onClick={handleReset}
-                                className="text-red-400 hover:text-red-300 hover:bg-red-900/10"
-                             >
-                                Cancelar / Resetar
-                             </Button>
-                             <Button 
-                                variant="secondary" 
-                                onClick={handleConnect}
-                                disabled={loading}
-                                className="bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white"
-                             >
+                             <Button variant="ghost" onClick={() => setQrCode(null)}>Cancelar</Button>
+                             <Button variant="secondary" onClick={handleConnect}>
                                 <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                                 Atualizar
                              </Button>

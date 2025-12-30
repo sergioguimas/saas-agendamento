@@ -2,9 +2,8 @@
 
 import { createClient } from "@/utils/supabase/server"
 
-// Mantendo a senha fixa para evitar erro de .env
-const EVOLUTION_URL = "http://127.0.0.1:8082"
-const EVOLUTION_API_KEY = "medagenda123"
+const EVOLUTION_URL = process.env.NEXT_PUBLIC_EVOLUTION_API_URL || "http://127.0.0.1:8082"
+const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY!
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
