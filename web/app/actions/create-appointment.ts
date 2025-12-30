@@ -23,7 +23,6 @@ export async function createAppointment(formData: FormData) {
   }
 
   // 3. Pegar detalhes do serviço
-  // CORREÇÃO: Usando os nomes certos do seu banco atual ('duration' e 'name')
   const { data: service } = await supabase
     .from('services')
     .select('duration, price, name') 
