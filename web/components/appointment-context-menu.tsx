@@ -28,7 +28,7 @@ interface AppointmentContextMenuProps {
   children: React.ReactNode
   appointment: any
   customers?: { id: string; name: string }[] 
-  services?: { id: string; title: string; price: number | null }[]
+  services?: { id: string; name: string; price: number | null }[] 
   className?: string
 }
 
@@ -36,7 +36,7 @@ export function AppointmentContextMenu({
   children, 
   appointment, 
   className,
-  customers = [], // Valor padrão para não quebrar se vier vazio
+  customers = [],
   services = [] 
 }: AppointmentContextMenuProps) {
   

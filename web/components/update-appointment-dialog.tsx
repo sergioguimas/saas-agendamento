@@ -29,7 +29,7 @@ interface EditAppointmentDialogProps {
   onOpenChange: (open: boolean) => void
   appointment: any
   customers: { id: string; name: string }[]
-  services: { id: string; title: string; price: number | null }[]
+  services: { id: string; name: string; price: number | null }[]
 }
 
 export function EditAppointmentDialog({ 
@@ -102,7 +102,7 @@ export function EditAppointmentDialog({
               <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-300">
                 {services.map((service) => (
                   <SelectItem key={service.id} value={service.id}>
-                    {service.title} - R$ {service.price}
+                    {service.name} - R$ {service.price}
                   </SelectItem>
                 ))}
               </SelectContent>
