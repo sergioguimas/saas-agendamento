@@ -1,6 +1,6 @@
 "use client"
 
-import { createClient } from "@/utils/supabase/server"
+import { createClient } from "@/utils/supabase/client"
 import { notFound } from "next/navigation"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
