@@ -6,7 +6,8 @@ import {
   Stethoscope, 
   CalendarDays, 
   Building2, 
-  ShieldCheck 
+  ShieldCheck,
+  CheckCircle2 
 } from 'lucide-react'
 
 export default async function DashboardPage() {
@@ -36,7 +37,7 @@ export default async function DashboardPage() {
   const org = profile?.organizations
 
   // 3. Busca Indicadores (Contagens)
-  const [servicesCount, patientsCount, appointmentsToday] = await Promise.all([
+  const [servicesCount, patientsCount, appointmentsToday, allAppointments] = await Promise.all([
     supabase
       .from('services')
       .select('*', { count: 'exact', head: true })
@@ -56,8 +57,21 @@ export default async function DashboardPage() {
       `) // Explicita que customer_id é a ponte para a tabela customers
       .eq('organizations_id', profile.organizations_id)
       .gte('start_time', new Date().toISOString().split('T')[0])
-      .order('start_time', { ascending: true })
+      .order('start_time', { ascending: true }),
+
+      // Query de hoje (para o card de Próximo Atendimento)
+      supabase.from('appointments').select('...'),
+
+      // Nova query para estatísticas de presença (últimos 30 dias por exemplo)
+      supabase
+      .from('appointments')
+      .select('status')
+      .eq('organizations_id', profile.organizations_id)
   ]) as any
+
+const total = allAppointments.data?.length || 0
+const presence = allAppointments.data?.filter((a: any) => a.status === 'concluded').length || 0
+const presenceRate = total > 0 ? Math.round((presence / total) * 100) : 100
 
   return (
     <div className="p-8 space-y-8 bg-black min-h-screen text-zinc-100">
@@ -137,6 +151,22 @@ export default async function DashboardPage() {
           </div>
         </CardContent>
       </Card>
+
+      <Card className="bg-zinc-900/50 border-zinc-800 hover:bg-zinc-900 transition-colors">
+        <CardContent className="p-6">
+          <div className="flex justify-between items-start">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-zinc-400">Taxa de Presença</p>
+              <h2 className="text-3xl font-bold tracking-tight">{presenceRate}%</h2>
+              <p className="text-xs text-zinc-500">Média de comparecimento</p>
+            </div>
+            <div className="p-2 bg-emerald-500/10 rounded-lg">
+              <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
     </div>
 
       {/* Seção Próximo Atendimento */}
