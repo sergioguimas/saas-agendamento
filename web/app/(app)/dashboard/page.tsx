@@ -31,39 +31,38 @@ export default async function DashboardPage() {
   return (
     <div className="p-8 space-y-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-zinc-100">Dashboard</h1>
         <p className="text-muted-foreground">
-          Bem-vindo de volta, {profile?.full_name || user.user_metadata?.full_name || user.email}        </p>
+          Bem-vindo de volta, {profile?.full_name || user.user_metadata?.full_name || user.email}
+        </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {/* Card da Organização */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Sua Organização
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {/* Card da Empresa - Agora mais compacto */}
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardHeader className="pb-0 pt-4"> {/* pb-0 remove o espaço de baixo do título */}
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+              Sua Empresa
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{profile?.organizations?.name || 'Sem Empresa'}</div>
-            <p className="text-xs text-muted-foreground">
-              Slug: {profile?.organizations?.slug}
-            </p>
+          <CardContent className="pt-1 pb-4"> {/* pt-1 deixa o nome logo abaixo do título */}
+            <div className="text-xl font-bold text-zinc-100 truncate">
+              {profile?.organizations?.name || 'Sem Empresa'}
+            </div>
           </CardContent>
         </Card>
 
-        {/* Card do Cargo */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+        {/* Card do Cargo - Seguindo o mesmo padrão compacto */}
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardHeader className="pb-0 pt-4">
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
               Seu Cargo
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold capitalize">{profile?.role}</div>
-            <p className="text-xs text-muted-foreground">
-              Acesso total ao sistema
-            </p>
+          <CardContent className="pt-1 pb-4">
+            <div className="text-xl font-bold capitalize text-zinc-100">
+              {profile?.role || 'Admin'}
+            </div>
           </CardContent>
         </Card>
       </div>
