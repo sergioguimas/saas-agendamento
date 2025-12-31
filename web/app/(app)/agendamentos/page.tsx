@@ -18,71 +18,82 @@ export default async function AgendamentosPage() {
     redirect('/login')
   }
 
-  // 2. Buscar Perfil (Organization ID)
+  // 2. Buscar Perfil (Usando organizations_id no plural)
   const { data: profile } = await supabase
     .from('profiles')
-    .select('organization_id')
+    .select('organizations_id')
     .eq('id', user.id)
-    .single()
+    .single() as any
 
-  if (!profile?.organization_id) {
-    return <div className="p-8">Erro: Usuário sem organização vinculada.</div>
+  if (!profile?.organizations_id) {
+    return <div className="p-8 text-zinc-400 font-medium">Erro: Usuário sem organização vinculada.</div>
   }
 
-  // 3. Buscar Agendamentos
-  // Nota: Agora que arrumamos o SQL, 'customers' vai funcionar.
+  // 3. Busca Agendamentos com mapeamento de colunas explícito
   const { data: rawAppointments } = await supabase
     .from('appointments')
     .select(`
       *,
-      customers ( id, name, phone ), 
-      services ( id, name, duration )
+      customers:customer_id ( id, full_name, phone ), 
+      services:service_id ( id, name, duration )
     `)
-    .eq('organization_id', profile.organization_id)
+    .eq('organizations_id', profile.organizations_id)
 
-  // 4. Tratamento de Dados (O "Pulo do Gato" para corrigir o erro de Tipagem)
-  // Mapeamos os dados brutos para o formato exato que o CalendarView espera.
-  const appointments = rawAppointments?.map(app => ({
-    ...app,
-    // Garante que status nunca seja null
-    status: app.status || 'pending', 
-    // Garante que customer exista (mesmo que o banco falhe)
-    customer: Array.isArray(app.customers) ? app.customers[0] : app.customers,
-    service: Array.isArray(app.services) ? app.services[0] : app.services
-  })) || []
+  // Refinamos os dados para satisfazer o TypeScript e o componente
+  const appointments = (rawAppointments || []).map(app => {
+    const customerData = Array.isArray(app.customers) ? app.customers[0] : app.customers;
+    const serviceData = Array.isArray(app.services) ? app.services[0] : app.services;
 
-  // 5. Buscar Dados para o Modal
-  const { data: customers } = await supabase
+    return {
+      ...app,
+      // Garante que o status nunca seja null para evitar o erro de tipagem
+      status: app.status || 'scheduled', 
+      customer: customerData,
+      service: serviceData,
+    };
+  }) as any;
+
+  // 4. Buscar Clientes e Serviços para o Modal (Normalizando para o Dialog)
+  const { data: rawCustomers } = await supabase
     .from('customers')
-    .select('id, name')
-    .eq('organization_id', profile.organization_id)
-    .order('name')
+    .select('id, full_name') 
+    .eq('organizations_id', profile.organizations_id)
+    .order('full_name');
 
-  const { data: services } = await supabase
+  const { data: rawServices } = await supabase
     .from('services')
     .select('id, name, price')
-    .eq('organization_id', profile.organization_id)
+    .eq('organizations_id', profile.organizations_id)
     .eq('active', true)
-    .order('name')
+    .order('name');
+
+  // Mapeia full_name -> name para o componente não reclamar
+  const customersForModal = (rawCustomers as any[])?.map(c => ({
+    id: c.id,
+    name: c.full_name
+  })) || [];
+
+  const servicesForModal = (rawServices as any[])?.map(s => ({
+    id: s.id,
+    name: s.name,
+    price: s.price
+  })) || [];
 
   return (
-    <div className="flex-1 space-y-4 p-8 pt-6">
+    <div className="flex-1 space-y-4 p-8 pt-6 bg-black min-h-screen">
       <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Agenda</h2>
+        <h2 className="text-3xl font-bold tracking-tight text-zinc-100">Agenda</h2>
         <div className="flex items-center space-x-2">
           <CreateAppointmentDialog 
-            // @ts-ignore (Ignora erro se customers vier nulo, passamos array vazio)
-            customers={customers || []} 
-            // @ts-ignore
-            services={services || []} 
+            customers={customersForModal} 
+            services={servicesForModal}
+            organizations_id={profile.organizations_id}
           />
         </div>
       </div>
       
-      <div className="h-[calc(100vh-200px)] bg-zinc-900 rounded-lg border border-zinc-800 overflow-hidden">
-        {/* Agora passamos a lista tratada e limpa */}
-        {/* @ts-ignore: Às vezes o TS reclama de tipos complexos no join, o ignore aqui é seguro pois tratamos acima */}
-        <CalendarView appointments={appointments} />
+      <div className="h-[calc(100vh-200px)] bg-zinc-900/50 border border-zinc-800 rounded-lg overflow-hidden shadow-xl">
+         <CalendarView appointments={appointments} customers={customersForModal} services={servicesForModal} />
       </div>
     </div>
   )

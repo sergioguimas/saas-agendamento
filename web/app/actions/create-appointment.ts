@@ -4,13 +4,14 @@ import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { sendWhatsappMessage } from './send-whatsapp'
 
-export async function createAppointment(formData: FormData) {
+export async function createAppointments(formData: FormData) {
   const supabase = await createClient()
 
   // 1. Pegar dados do formulário
   const customerId = formData.get('customerId') as string
   const serviceId = formData.get('serviceId') as string
   const startTimeRaw = formData.get('startTime') as string 
+  const organizations_id = formData.get('organizations_id') as string
 
   if (!customerId || !serviceId || !startTimeRaw) {
     return { error: 'Preencha todos os campos' }
@@ -64,8 +65,8 @@ export async function createAppointment(formData: FormData) {
     end_time: endTime.toISOString(),
     price: service.price,
     status: 'confirmed',
-    organization_id: profile.organization_id
-  })
+    organizations_id: organizations_id
+  }as any) 
 
   if (error) {
     console.error("Erro ao agendar:", error)

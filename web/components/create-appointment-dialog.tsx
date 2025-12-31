@@ -20,17 +20,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { createAppointment } from "@/app/actions/create-appointment"
+import { createAppointments } from "@/app/actions/create-appointment"
 import { toast } from "sonner"
 import { CalendarPlus, Loader2 } from "lucide-react"
 
-// Tipos atualizados para o novo banco (name ao invés de title)
 type Props = {
   customers: { id: string; name: string }[]
-  services: { id: string; name: string; price: number | null }[] // <--- CORRIGIDO
+  services: { id: string; name: string; price: number | null }[]
+  organizations_id: string
 }
 
-export function CreateAppointmentDialog({ customers, services }: Props) {
+export function CreateAppointmentDialog({ customers, services, organizations_id }: Props) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
 
@@ -39,14 +39,17 @@ export function CreateAppointmentDialog({ customers, services }: Props) {
     setLoading(true)
     
     const formData = new FormData(event.currentTarget)
-    const result = await createAppointment(formData)
+    // Anexa o ID da organização que veio das props
+    formData.append('organizations_id', organizations_id)
 
-    setLoading(false)
+    const result = await createAppointments(formData)
 
-    if (result?.error) {
+    if (result.error) {
       toast.error(result.error)
+      setLoading(false)
     } else {
-      toast.success("Agendamento criado com sucesso!")
+      toast.success("Agendamento realizado!")
+      setLoading(false)
       setOpen(false)
     }
   }
@@ -73,12 +76,14 @@ export function CreateAppointmentDialog({ customers, services }: Props) {
           <div className="grid gap-2">
             <Label>Paciente</Label>
             <Select name="customerId" required>
-              <SelectTrigger className="bg-zinc-950 border-zinc-800 focus:ring-blue-900">
+              <SelectTrigger className="bg-zinc-950 border-zinc-800 focus:ring-blue-900 text-left">
                 <SelectValue placeholder="Selecione o paciente..." />
               </SelectTrigger>
               <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-100 max-h-[200px]">
-                {customers?.map(c => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                {customers?.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -88,13 +93,12 @@ export function CreateAppointmentDialog({ customers, services }: Props) {
           <div className="grid gap-2">
             <Label>Procedimento</Label>
             <Select name="serviceId" required>
-              <SelectTrigger className="bg-zinc-950 border-zinc-800 focus:ring-blue-900">
+              <SelectTrigger className="bg-zinc-950 border-zinc-800 focus:ring-blue-900 text-left">
                 <SelectValue placeholder="Selecione o procedimento..." />
               </SelectTrigger>
               <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
-                {services?.map(s => (
+                {services?.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
-                        {/* CORRIGIDO: s.name ao invés de s.title */}
                         {s.name} - {s.price ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(s.price) : 'R$ 0,00'}
                     </SelectItem>
                 ))}
