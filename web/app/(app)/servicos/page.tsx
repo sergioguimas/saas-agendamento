@@ -60,8 +60,6 @@ export default async function ProcedimentosPage() {
                     organizations_id={profile.organizations_id} 
                     serviceToEdit={service} 
                   />
-                  
-                  {/* Novo componente de cliente que lida com o clique */}
                   <DeleteServiceButton serviceId={service.id} />
                 </div>
               </div>

@@ -23,10 +23,10 @@ export async function upsertService(formData: FormData) {
     active: true
   }
   // LOG DE TESTE: Verifique se isso aparece no seu terminal/Vercel
-  console.log("Tentando salvar para a organização:", organizations_id);
-
+  // Validação extra antes do banco
   if (!organizations_id || organizations_id === 'undefined') {
-    return { error: "ID da organização não encontrado. Recarregue a página." };
+    console.error("DEBUG: organizations_id está faltando no FormData");
+    return { error: "Erro interno: ID da organização não identificado." }
   }
 
   try {

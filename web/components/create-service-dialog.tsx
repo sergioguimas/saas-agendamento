@@ -51,6 +51,10 @@ export function CreateServiceDialog({ organizations_id, serviceToEdit }: { organ
       <DialogContent className="bg-zinc-900 border-zinc-800 text-white">
         <DialogHeader><DialogTitle>{serviceToEdit ? 'Editar' : 'Novo'} Procedimento</DialogTitle></DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <input type="hidden" name="organizations_id" value={organizations_id} />
+          {serviceToEdit && (
+            <input type="hidden" name="id" value={serviceToEdit.id} />
+          )}
           <div>
             <Label>Nome</Label>
             <Input name="name" defaultValue={serviceToEdit?.name} required className="bg-zinc-950 border-zinc-800" />
