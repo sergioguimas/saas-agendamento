@@ -52,7 +52,7 @@ export default async function SettingsPage() {
         </TabsList>
 
         <TabsContent value="clinic">
-          <SettingsForm tenant={organization} />
+          <SettingsForm organization={organization} />
         </TabsContent>
 
         <TabsContent value="profile">

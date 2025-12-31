@@ -10,7 +10,7 @@ export async function updateSettings(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "Usuário não autenticado" }
 
-  // 2. Descobrir qual é o Tenant (Clínica) desse usuário
+  // 2. Descobrir qual é o organization (Clínica) desse usuário
   const { data: profile } = await supabase
     .from('profiles')
     .select('organization_id')

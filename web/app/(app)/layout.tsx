@@ -24,15 +24,15 @@ export default async function AppLayout({
     redirect("/login")
   }
 
-  // 2. Buscar dados do Tenant
+  // 2. Buscar dados do organization
   const { data: profile } = await supabase
     .from('profiles')
-    .select('tenants(name)')
+    .select('organizations(name)')
     .eq('id', user.id)
     .single()
 
   // @ts-ignore
-  const clinicName = profile?.tenants?.name || "Eliza"
+  const clinicName = profile?.organizations?.name || "Eliza"
 
   return (
     <div className="flex min-h-screen bg-zinc-950 flex-col md:flex-row">

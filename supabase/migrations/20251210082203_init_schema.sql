@@ -2,8 +2,8 @@
 create extension if not exists "uuid-ossp";
 create extension if not exists "btree_gist";
 
--- 2. Tabela de Tenants
-create table public.tenants (
+-- 2. Tabela de organizations
+create table public.organizations (
   id uuid primary key default uuid_generate_v4(),
   created_at timestamptz default now(),
   name text not null,
@@ -16,7 +16,7 @@ create table public.tenants (
 -- 3. Tabela de Perfis
 create table public.profiles (
   id uuid references auth.users on delete cascade primary key,
-  tenant_id uuid references public.tenants(id),
+  organizations_id uuid references public.organizations(id),
   full_name text,
   role text default 'staff' check (role in ('owner', 'admin', 'staff'))
 );
@@ -24,7 +24,7 @@ create table public.profiles (
 -- 4. Tabela de Serviços
 create table public.services (
   id uuid primary key default uuid_generate_v4(),
-  tenant_id uuid references public.tenants(id) not null,
+  organizations_id uuid references public.organizations(id) not null,
   title text not null,
   duration_minutes int not null default 30,
   price decimal(10,2) default 0.00,
@@ -34,7 +34,7 @@ create table public.services (
 -- 5. Tabela de Clientes
 create table public.customers (
   id uuid primary key default uuid_generate_v4(),
-  tenant_id uuid references public.tenants(id) not null,
+  organizations_id uuid references public.organizations(id) not null,
   name text not null,
   phone text not null,
   email text,
@@ -44,7 +44,7 @@ create table public.customers (
 -- 6. Tabela de Agendamentos
 create table public.appointments (
   id uuid primary key default uuid_generate_v4(),
-  tenant_id uuid references public.tenants(id) not null,
+  organizations_id uuid references public.organizations(id) not null,
   service_id uuid references public.services(id),
   customer_id uuid references public.customers(id),
   start_time timestamptz not null,
@@ -55,29 +55,29 @@ create table public.appointments (
   -- CONSTRAINT CORRIGIDA:
   -- Usamos 'tstzrange' (Time Stamp Time Zone Range) em vez de 'tsrange'
   exclude using gist (
-    tenant_id with =,
+    organizations_id with =,
     tstzrange(start_time, end_time) with &&
   )
 );
 
 -- INDEXES
-create index idx_appointments_tenant_range on public.appointments (tenant_id, start_time, end_time);
+create index idx_appointments_organizations_range on public.appointments (organizations_id, start_time, end_time);
 create index idx_customers_phone on public.customers (phone);
 
 -- RLS (Segurança)
-alter table public.tenants enable row level security;
+alter table public.organizations enable row level security;
 alter table public.profiles enable row level security;
 alter table public.services enable row level security;
 alter table public.customers enable row level security;
 alter table public.appointments enable row level security;
 
 -- Função auxiliar para RLS
-create or replace function public.get_my_tenant_id()
+create or replace function public.get_my_organization_id()
 returns uuid as $$
-  select tenant_id from public.profiles where id = auth.uid() limit 1;
+  select organizations_id from public.profiles where id = auth.uid() limit 1;
 $$ language sql security definer;
 
 -- Policies Básicas (Exemplo)
-create policy "Users can view services from their own tenant"
+create policy "Users can view services from their own organization"
 on public.services for select
-using ( tenant_id = get_my_tenant_id() );
+using ( organizations_id = get_my_organization_id() );

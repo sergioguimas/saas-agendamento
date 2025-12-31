@@ -17,7 +17,7 @@ export default function PrintHistoryPage({
       const { id } = await params
       const supabase = createClient()
       
-      // Buscando dados do cliente e da organização (antigo clinic/tenant)
+      // Buscando dados do cliente e da organização
       const { data: customerData } = await supabase
         .from('customers')
         .select(`

@@ -11,24 +11,24 @@ UPDATE public.medical_records SET status = 'draft' WHERE status IS NULL;
 -- Removemos a política anterior se existir (apenas segurança para re-runs)
 DROP POLICY IF EXISTS "Prevent update of signed records" ON public.medical_records;
 
-CREATE POLICY "Users can update own tenant drafts"
+CREATE POLICY "Users can update own organizations drafts"
 ON public.medical_records FOR UPDATE
 USING (
-  tenant_id = (select tenant_id from public.profiles where id = auth.uid()) 
+  organizations_id = (select organizations_id from public.profiles where id = auth.uid()) 
   AND
   status = 'draft'
 )
 WITH CHECK (
-  tenant_id = (select tenant_id from public.profiles where id = auth.uid())
+  organizations_id = (select organizations_id from public.profiles where id = auth.uid())
   AND
   (status = 'draft' or status = 'signed')
 );
 
--- Permite apagar APENAS se for draft e pertencer ao meu tenant
-create policy "Users can delete own tenant drafts"
+-- Permite apagar APENAS se for draft e pertencer ao meu organizations
+create policy "Users can delete own organizations drafts"
 on public.medical_records for delete
 using (
-  tenant_id = (select tenant_id from public.profiles where id = auth.uid()) 
+  organizations_id = (select organizations_id from public.profiles where id = auth.uid()) 
   AND
   status = 'draft'
 );

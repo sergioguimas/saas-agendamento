@@ -1,15 +1,15 @@
--- 1. Permitir que qualquer usuário autenticado crie um tenant (Sua Empresa)
+-- 1. Permitir que qualquer usuário autenticado crie um organization (Sua Empresa)
 create policy "Enable insert for authenticated users only"
-on public.tenants for insert
+on public.organizations for insert
 to authenticated
 with check (true);
 
--- 2. Permitir que o usuário veja seu próprio tenant
--- (A lógica é: Eu vejo o tenant se meu perfil apontar para ele)
-create policy "Users can view own tenant"
-on public.tenants for select
+-- 2. Permitir que o usuário veja seu próprio organization
+-- (A lógica é: Eu vejo o organization se meu perfil apontar para ele)
+create policy "Users can view own organization"
+on public.organizations for select
 to authenticated
-using ( id in (select tenant_id from public.profiles where id = auth.uid()) );
+using ( id in (select organizations_id from public.profiles where id = auth.uid()) );
 
 -- 3. Permitir que o usuário crie seu próprio perfil
 create policy "Enable insert for users based on user_id"

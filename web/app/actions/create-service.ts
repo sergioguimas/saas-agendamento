@@ -15,7 +15,7 @@ export async function createService(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Não autorizado' }
 
-  // 2. Buscar Organization (Antigo Tenant)
+  // 2. Buscar Organization
   const { data: profile } = await supabase
     .from('profiles')
     .select('organization_id')

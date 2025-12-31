@@ -10,7 +10,7 @@ import { updateSettings } from "@/app/actions/update-settings"
 import { toast } from "sonner"
 import { Loader2, Save } from "lucide-react"
 
-export function SettingsForm({ tenant }: { tenant: any }) {
+export function SettingsForm({ organization }: { organization: any }) {
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -46,7 +46,7 @@ export function SettingsForm({ tenant }: { tenant: any }) {
               <Input 
                 id="name" 
                 name="name" 
-                defaultValue={tenant.name} 
+                defaultValue={organization.name} 
                 className="bg-zinc-950 border-zinc-800 focus:ring-blue-600 text-zinc-100"
                 placeholder="Ex: Consultório Dr. João Silva"
                 required
@@ -58,7 +58,7 @@ export function SettingsForm({ tenant }: { tenant: any }) {
               <Input 
                 id="crm" 
                 name="crm" 
-                defaultValue={tenant.crm || ''} 
+                defaultValue={organization.crm || ''} 
                 className="bg-zinc-950 border-zinc-800 focus:ring-blue-600 text-zinc-100"
                 placeholder="Ex: CRM/MG 123456"
               />
@@ -71,7 +71,7 @@ export function SettingsForm({ tenant }: { tenant: any }) {
               <Input 
                 id="document" 
                 name="document" 
-                defaultValue={tenant.document || ''} 
+                defaultValue={organization.document || ''} 
                 className="bg-zinc-950 border-zinc-800 focus:ring-blue-600 text-zinc-100"
                 placeholder="Documento para nota fiscal"
               />
@@ -82,7 +82,7 @@ export function SettingsForm({ tenant }: { tenant: any }) {
               <Input 
                 id="phone" 
                 name="phone" 
-                defaultValue={tenant.phone || ''} 
+                defaultValue={organization.phone || ''} 
                 className="bg-zinc-950 border-zinc-800 focus:ring-blue-600 text-zinc-100"
                 placeholder="(00) 00000-0000"
               />
@@ -95,7 +95,7 @@ export function SettingsForm({ tenant }: { tenant: any }) {
               id="email" 
               name="email" 
               type="email"
-              defaultValue={tenant.email || ''} 
+              defaultValue={organization.email || ''} 
               className="bg-zinc-950 border-zinc-800 focus:ring-blue-600 text-zinc-100"
               placeholder="contato@clinic.com"
             />
@@ -106,7 +106,7 @@ export function SettingsForm({ tenant }: { tenant: any }) {
             <Textarea 
               id="address" 
               name="address" 
-              defaultValue={tenant.address || ''} 
+              defaultValue={organization.address || ''} 
               className="bg-zinc-950 border-zinc-800 focus:ring-blue-600 text-zinc-100 min-h-[80px]"
               placeholder="Rua, Número, Bairro, Cidade - Estado, CEP"
             />

@@ -12,7 +12,7 @@ export async function updateCustomer(customerId: string, formData: FormData) {
   const gender = formData.get('gender') as string
   const notes = formData.get('notes') as string
 
-  // A RLS do banco já garante que só edito se for do meu tenant
+  // A RLS do banco já garante que só edito se for do meu organization
   const { error } = await supabase
     .from('customers')
     .update({

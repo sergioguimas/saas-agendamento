@@ -303,7 +303,7 @@ client_id = ""
 secret = "env(SUPABASE_AUTH_EXTERNAL_APPLE_SECRET)"
 # Overrides the default auth redirectUrl.
 redirect_uri = ""
-# Overrides the default auth provider URL. Used to support self-hosted gitlab, single-tenant Azure,
+# Overrides the default auth provider URL. Used to support self-hosted gitlab, single-organization Azure,
 # or any other third-party OIDC providers.
 url = ""
 # If enabled, the nonce check will be skipped. Required for local sign in with Google auth.
@@ -324,8 +324,8 @@ enabled = false
 # Use Auth0 as a third-party provider alongside Supabase Auth.
 [auth.third_party.auth0]
 enabled = false
-# tenant = "my-auth0-tenant"
-# tenant_region = "us"
+# organization = "my-auth0-organization"
+# organization = "us"
 
 # Use AWS Cognito (Amplify) as a third-party provider alongside Supabase Auth.
 [auth.third_party.aws_cognito]
