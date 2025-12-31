@@ -50,7 +50,7 @@ export async function signUp(formData: FormData) {
     return { error: error.message }
   }
 
-  return { success: 'Verifique seu email para confirmar o cadastro.' }
+  //return { success: 'Verifique seu email para confirmar o cadastro.' }
   redirect('/setup')
 }
 
