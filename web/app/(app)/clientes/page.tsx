@@ -44,7 +44,11 @@ export default async function ClientesPage({
     customerQuery = customerQuery.ilike('full_name', `%${query}%`)
   }
 
-  const { data: customers } = await customerQuery as any
+  const { data: customers, error } = await customerQuery as any;
+
+  if (error) {
+    console.error("Erro ao buscar clientes:", error);
+  }
 
   return (
     <div className="p-8 space-y-8 bg-black min-h-screen text-zinc-100">
