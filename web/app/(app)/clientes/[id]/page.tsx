@@ -1,96 +1,105 @@
 import { createClient } from "@/utils/supabase/server"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
+import { ArrowLeft, Phone, User, Calendar, FileText, Printer, Pencil, Trash2, Send } from "lucide-react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card } from "@/components/ui/card"
-import { MedicalRecordList } from "@/components/medical-record-list"
-import { MedicalRecordForm } from "@/components/medical-record-form"
-import { CustomerDetailsHeader } from "@/components/customer-details-header"
+import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent } from "@/components/ui/card"
 
-export default async function CustomerDetailsPage({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
-  const { id } = await params
+export default async function PacienteDetalhesPage({ params }: { params: { id: string } }) {
   const supabase = await createClient()
 
-  // 1. Buscar Dados do Cliente
+  // 1. Busca os dados do paciente
   const { data: customer } = await supabase
     .from('customers')
     .select('*')
-    .eq('id', id)
-    .single()
+    .eq('id', params.id)
+    .single() as any
 
-  if (!customer) {
-    return notFound()
-  }
+  if (!customer) notFound()
 
-  // 2. Buscar Prontuários
-  const { data: records } = await supabase
-    .from('medical_records')
-    .select('*')
-    .eq('customer_id', id)
-    .order('created_at', { ascending: false })
+  // 2. Busca o histórico de agendamentos deste paciente
+  const { data: appointments } = await supabase
+    .from('appointments')
+    .select('*, services(name, color)')
+    .eq('customer_id', params.id)
+    .order('start_time', { ascending: false }) as any
 
   return (
-    <div className="max-w-5xl mx-auto">
-      
-      <CustomerDetailsHeader customer={customer} />
+    <div className="p-8 bg-black min-h-screen text-zinc-100">
+      {/* Cabeçalho de Ações */}
+      <div className="flex flex-col md:flex-row justify-between gap-4 mb-8">
+        <div className="flex items-center gap-4">
+          <Link href="/clientes">
+            <Button variant="ghost" size="icon" className="bg-zinc-900 border border-zinc-800">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold">{customer.full_name}</h1>
+            <div className="flex gap-4 mt-1 text-sm text-zinc-500">
+              <span className="flex items-center gap-1"><User className="h-3 w-3" /> Gênero: {customer.gender || 'N/D'}</span>
+              <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {customer.phone}</span>
+            </div>
+          </div>
+        </div>
 
-      <Tabs defaultValue="records" className="w-full">
-        <TabsList className="bg-zinc-900 border border-zinc-800 w-full justify-start h-auto p-1 mb-8">
-          <TabsTrigger value="info" className="data-[state=active]:bg-zinc-800">Dados Cadastrais</TabsTrigger>
-          <TabsTrigger value="records" className="data-[state=active]:bg-zinc-800">Prontuário</TabsTrigger>
-          <TabsTrigger value="history" className="data-[state=active]:bg-zinc-800">Histórico de Agendamentos</TabsTrigger>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" className="bg-zinc-900 border-zinc-800"><Printer className="mr-2 h-4 w-4" /> Histórico</Button>
+          <Button variant="outline" className="bg-zinc-900 border-zinc-800"><Pencil className="mr-2 h-4 w-4" /> Editar</Button>
+          <Button variant="destructive" className="bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500 hover:text-white">
+            <Trash2 className="mr-2 h-4 w-4" /> Excluir
+          </Button>
+        </div>
+      </div>
+
+      {/* Abas de Navegação */}
+      <Tabs defaultValue="prontuario" className="space-y-6">
+        <TabsList className="bg-zinc-900 border border-zinc-800 p-1 w-full justify-start overflow-x-auto">
+          <TabsTrigger value="dados" className="flex-1 md:flex-none">Dados Cadastrais</TabsTrigger>
+          <TabsTrigger value="prontuario" className="flex-1 md:flex-none">Prontuário</TabsTrigger>
+          <TabsTrigger value="historico" className="flex-1 md:flex-none">Histórico de Agendamentos</TabsTrigger>
         </TabsList>
 
-        {/* Aba Prontuário */}
-        <TabsContent value="records" className="space-y-6">
-           <MedicalRecordForm customerId={id} />
-           
-           {!records?.length ? (
-              <div className="text-center py-8 border border-zinc-800 border-dashed rounded-lg">
-                <p className="text-zinc-500 text-sm">Nenhuma anotação registrada.</p>
+        <TabsContent value="prontuario" className="space-y-4">
+          <Card className="bg-zinc-900/40 border-zinc-800">
+            <CardContent className="p-6 space-y-4">
+              <Textarea 
+                placeholder="Descreva a evolução clínica do paciente..." 
+                className="min-h-[200px] bg-zinc-950 border-zinc-800 focus:ring-blue-500"
+              />
+              <div className="flex justify-end">
+                <Button className="bg-blue-600 hover:bg-blue-700">
+                  <Send className="mr-2 h-4 w-4" /> Salvar Evolução
+                </Button>
               </div>
-            ) : (
-              <MedicalRecordList records={records} customerId={id} />
-            )}
-        </TabsContent>
-
-        {/* Aba Informações (Visualização rápida extra) */}
-        <TabsContent value="info">
-          <Card className="bg-zinc-900 border-zinc-800 p-6">
-            <h3 className="font-medium text-zinc-100 mb-4">Informações Detalhadas</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-4 text-sm">
-              <div>
-                <span className="block text-zinc-500 mb-1">Email</span>
-                <span className="text-zinc-200">{customer.email || '-'}</span>
-              </div>
-              <div>
-                <span className="block text-zinc-500 mb-1">Telefone</span>
-                <span className="text-zinc-200">{customer.phone || '-'}</span>
-              </div>
-              <div>
-                <span className="block text-zinc-500 mb-1">Gênero</span>
-                <span className="text-zinc-200 capitalize">{customer.gender || '-'}</span>
-              </div>
-              <div className="col-span-1 md:col-span-2">
-                <span className="block text-zinc-500 mb-1">Observações</span>
-                <p className="text-zinc-300 leading-relaxed bg-zinc-950/50 p-3 rounded-md border border-zinc-800/50">
-                  {customer.notes || 'Sem observações registradas.'}
-                </p>
-              </div>
-            </div>
+            </CardContent>
           </Card>
-        </TabsContent>
-
-        {/* Aba Histórico */}
-        <TabsContent value="history">
-          <div className="text-center py-12 text-zinc-500 border border-zinc-800 border-dashed rounded-lg">
-             Histórico de agendamentos em breve.
+          
+          <div className="p-8 text-center border-2 border-dashed border-zinc-800 rounded-xl text-zinc-600">
+             Nenhuma anotação registrada anteriormente.
           </div>
         </TabsContent>
 
+        <TabsContent value="historico">
+          <div className="grid gap-4">
+            {appointments?.map((app: any) => (
+              <Card key={app.id} className="bg-zinc-900/40 border-zinc-800">
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="h-2 w-2 rounded-full" style={{ backgroundColor: app.services?.color }} />
+                    <div>
+                      <p className="font-bold">{app.services?.name}</p>
+                      <p className="text-xs text-zinc-500">{new Date(app.start_time).toLocaleString('pt-BR')}</p>
+                    </div>
+                  </div>
+                  <span className="text-xs px-2 py-1 rounded bg-zinc-800 text-zinc-400 capitalize">{app.status}</span>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
       </Tabs>
     </div>
   )
