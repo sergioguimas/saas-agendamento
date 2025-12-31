@@ -73,7 +73,7 @@ export default async function ClientesPage({
 
       <div className="grid gap-4">
         {customers?.map((customer: any) => (
-          <Link key={customer.id} href={`/clientes/${customer.id}`}>
+          <Link key={customer.id} href={`/clientes/${customer.id}`} prefetch={false}>
             <Card className="bg-zinc-900/40 border-zinc-800 hover:bg-zinc-900/80 transition-all group cursor-pointer">
               <CardContent className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-4">
