@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog"
 import { UserPlus, Loader2, Phone, CreditCard } from "lucide-react"
 import { toast } from "sonner"
-import { createCustomer } from "@/app/actions/create-customer"
+import { upsertCustomer } from "@/app/actions/create-customer"
 
 type Props = {
   organizations_id: string
@@ -33,7 +33,7 @@ export function CreateCustomerDialog({ organizations_id }: Props) {
     // O organizations_id é passado via Prop do Servidor para o Cliente e incluído no formulário
     formData.append('organizations_id', organizations_id)
 
-    const result = await createCustomer(formData)
+    const result = await upsertCustomer(formData)
 
     if (result.error) {
       toast.error(result.error)
