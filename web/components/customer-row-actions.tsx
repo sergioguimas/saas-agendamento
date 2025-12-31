@@ -53,8 +53,6 @@ export function CustomerRowActions({ customer }: CustomerRowActionsProps) {
     <>
       {/* 2. O COMPONENTE DO DIALOG (Invisível até abrir) */}
       <EditCustomerDialog 
-        open={showEditDialog} 
-        onOpenChange={setShowEditDialog} 
         customer={customer} 
       />
 
