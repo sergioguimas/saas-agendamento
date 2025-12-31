@@ -97,6 +97,7 @@ export default async function AgendamentosPage() {
             appointments={appointments} 
             customers={customersForModal} 
             services={servicesForModal} 
+            organizations_id={profile.organizations_id}
          />
       </div>
     </div>

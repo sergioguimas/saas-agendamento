@@ -27,9 +27,10 @@ type Props = {
   appointments: Appointment[]
   customers: { id: string; name: string }[]
   services: { id: string; name: string; price: number | null }[]
+  organizations_id: string
 }
 
-export function CalendarView({ appointments, customers, services }: Props) {
+export function CalendarView({ appointments, customers, services, organizations_id }: Props) {
   const [date, setDate] = useState(new Date())
   const [view, setView] = useState<'month' | 'day'>('day')
 
@@ -154,7 +155,7 @@ export function CalendarView({ appointments, customers, services }: Props) {
           <div className="h-6 w-px bg-zinc-800 mx-2 hidden md:block" />
           
           {/* Único botão de Novo Agendamento funcional */}
-          <CreateAppointmentDialog customers={customers} services={services} />
+          <CreateAppointmentDialog customers={customers} services={services} organizations_id={organizations_id}/>
         </div>
       </div>
 
