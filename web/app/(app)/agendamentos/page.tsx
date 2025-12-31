@@ -83,13 +83,6 @@ export default async function AgendamentosPage() {
     <div className="flex-1 space-y-4 p-8 pt-6 bg-black min-h-screen">
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight text-zinc-100">Agenda</h2>
-        <div className="flex items-center space-x-2">
-          <CreateAppointmentDialog 
-            customers={customersForModal} 
-            services={servicesForModal}
-            organizations_id={profile.organizations_id}
-          />
-        </div>
       </div>
       
       <div className="h-[calc(100vh-200px)] bg-zinc-900/50 border border-zinc-800 rounded-lg overflow-hidden shadow-xl">
