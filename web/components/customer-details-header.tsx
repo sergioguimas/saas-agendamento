@@ -42,9 +42,7 @@ export function CustomerDetailsHeader({ customer }: CustomerDetailsHeaderProps) 
   return (
     <>
       {/* O Modal de Edição fica aqui, invisível até ser chamado */}
-      <EditCustomerDialog 
-        customer={customer} 
-      />
+      <EditCustomerDialog customer={customer} />
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-4">

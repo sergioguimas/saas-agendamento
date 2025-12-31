@@ -8,23 +8,29 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent } from "@/components/ui/card"
 import { EditCustomerDialog } from "@/components/edit-customer-dialog"
 
-export default async function PacienteDetalhesPage({ params }: { params: { id: string } }) {
-  const supabase = await createClient()
+export default async function PacienteDetalhesPage({ 
+  params 
+}: { 
+  params: Promise<{ id: string }> // Define que params é uma Promise
+}) {
+  const resolvedParams = await params;
+  const id = resolvedParams.id;
 
-  // 1. Busca os dados do paciente
+  const supabase = await createClient();
+
   const { data: customer } = await supabase
     .from('customers')
     .select('*')
-    .eq('id', params.id)
-    .single() as any
+    .eq('id', id)
+    .single() as any;
 
-  if (!customer) notFound()
+  if (!customer) notFound();
 
   // 2. Busca o histórico de agendamentos deste paciente
   const { data: appointments } = await supabase
     .from('appointments')
     .select('*, services(name, color)')
-    .eq('customer_id', params.id)
+    .eq('customer_id', id)
     .order('start_time', { ascending: false }) as any
 
   return (
