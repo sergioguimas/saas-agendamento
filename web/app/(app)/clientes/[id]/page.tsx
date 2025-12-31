@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent } from "@/components/ui/card"
+import { EditCustomerDialog } from "@/components/edit-customer-dialog"
 
 export default async function PacienteDetalhesPage({ params }: { params: { id: string } }) {
   const supabase = await createClient()
@@ -47,7 +48,7 @@ export default async function PacienteDetalhesPage({ params }: { params: { id: s
 
         <div className="flex items-center gap-2">
           <Button variant="outline" className="bg-zinc-900 border-zinc-800"><Printer className="mr-2 h-4 w-4" /> Histórico</Button>
-          <Button variant="outline" className="bg-zinc-900 border-zinc-800"><Pencil className="mr-2 h-4 w-4" /> Editar</Button>
+          <EditCustomerDialog customer={customer} />
           <Button variant="destructive" className="bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500 hover:text-white">
             <Trash2 className="mr-2 h-4 w-4" /> Excluir
           </Button>
