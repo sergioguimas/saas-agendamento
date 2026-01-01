@@ -10,6 +10,8 @@ import {
   CheckCircle2,
   Clock
 } from 'lucide-react'
+import { AppointmentContextMenu } from "@/components/appointment-context-menu"
+import { cn } from "@/lib/utils"
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -155,26 +157,45 @@ export default async function DashboardPage() {
           <Clock className="h-5 w-5 text-blue-500" /> Próximo Atendimento
         </h3>
         {nextApp ? (
-          <Card className="bg-zinc-900/50 border-zinc-800 p-6 border-l-4" style={{ borderLeftColor: nextApp.services?.color || '#3b82f6' }}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center font-bold text-blue-500">
-                  {nextApp.customers?.full_name?.substring(0, 2).toUpperCase()}
+          /* O Menu de Contexto agora envolve o Card, permitindo o clique com o botão direito */
+          <AppointmentContextMenu 
+            appointment={nextApp} 
+            customers={resPatients.data || []} 
+            services={resServices.data || []}
+          >
+            <Card 
+              className="bg-zinc-900/50 border-zinc-800 p-6 border-l-4 cursor-context-menu hover:bg-zinc-900 transition-all" 
+              style={{ borderLeftColor: nextApp.services?.color || '#3b82f6' }}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center font-bold text-blue-500">
+                    {nextApp.customers?.full_name?.substring(0, 2).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="font-bold text-lg text-zinc-100">{nextApp.customers?.full_name}</p>
+                    <p className="text-sm text-zinc-400">
+                      {nextApp.services?.name} • <span className="text-blue-400 font-medium">
+                        {new Date(nextApp.start_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}
+                      </span>
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-bold text-lg text-zinc-100">{nextApp.customers?.full_name}</p>
-                  <p className="text-sm text-zinc-400">
-                    {nextApp.services?.name} • <span className="text-blue-400 font-medium">
-                      {new Date(nextApp.start_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}
-                    </span>
-                  </p>
-                </div>
+                
+                {/* Badge de Status Dinâmica */}
+                <span className={cn(
+                  "px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-widest",
+                  nextApp.status === 'scheduled' ? "bg-blue-500/10 text-blue-500 border-blue-500/20" :
+                  nextApp.status === 'arrived' ? "bg-amber-500/10 text-amber-500 border-amber-500/20" :
+                  "bg-zinc-800 text-zinc-500 border-zinc-700"
+                )}>
+                  {nextApp.status === 'scheduled' ? 'Agendado' : 
+                  nextApp.status === 'arrived' ? 'Chegou' : nextApp.status}
+                </span>
               </div>
-              <span className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-500 text-xs font-bold border border-blue-500/20 uppercase tracking-widest">
-                Agendado
-              </span>
-            </div>
-          </Card>
+              <p className="text-[10px] text-zinc-600 mt-4 italic text-right">Clique com o botão direito para gerenciar status</p>
+            </Card>
+          </AppointmentContextMenu>
         ) : (
           <div className="text-zinc-500 italic p-12 border border-dashed border-zinc-800 rounded-xl text-center">
             Nenhuma consulta agendada para o restante do dia.
