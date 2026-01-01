@@ -88,7 +88,7 @@ export function CalendarView({ appointments, customers, services, organizations_
               {new Date(appointment.start_time).toLocaleTimeString('pt-BR', { 
                 hour: '2-digit', 
                 minute: '2-digit',
-                timeZone: 'America/Sao_Paulo' // Força a exibição no fuso de Brasília
+                timeZone: 'UTC'
               })}
             </span>
           </div>
