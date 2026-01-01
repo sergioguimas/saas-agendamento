@@ -85,7 +85,11 @@ export function CalendarView({ appointments, customers, services, organizations_
           <div className="flex justify-between items-center opacity-70 text-[10px]">
             <span className="truncate max-w-[60%]">{appointment.services?.name}</span>
             <span>
-              {format(parseISO(appointment.start_time), 'HH:mm')}
+              {new Date(appointment.start_time).toLocaleTimeString('pt-BR', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                timeZone: 'America/Sao_Paulo' // Força a exibição no fuso de Brasília
+              })}
             </span>
           </div>
         </div>
