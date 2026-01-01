@@ -32,6 +32,11 @@ type Props = {
   organizations_id: string
 }
 
+const getRawHour = (dateString: string) => {
+  // Extrai a hora diretamente da string ISO (ex: "2026-01-01T12:50:00Z" -> 12)
+  return new Date(dateString).getUTCHours();
+};
+
 export function CalendarView({ appointments, customers, services, organizations_id }: Props) {
   const [date, setDate] = useState(new Date())
   const [view, setView] = useState<'month' | 'week' | 'day'>('month')
@@ -51,6 +56,7 @@ export function CalendarView({ appointments, customers, services, organizations_
   function today() {
     setDate(new Date())
   }
+  
 
   function AppointmentCard({ appointment }: { appointment: Appointment }) {
     const status = appointment.status || 'scheduled'
@@ -169,45 +175,40 @@ export function CalendarView({ appointments, customers, services, organizations_
   }
 
   function renderDayView() {
-    const hours = Array.from({ length: 14 }, (_, i) => i + 7)
+    const hours = Array.from({ length: 14 }, (_, i) => i + 7); // 07:00 às 20:00
 
     return (
       <div className="rounded-md border border-zinc-800 bg-zinc-900 overflow-hidden flex flex-col h-[700px]">
-         <div className="flex-1 overflow-y-auto">
-            {hours.map(hour => {
-              const hourAppointments = appointments.filter(apt => {
-                const aptDate = parseISO(apt.start_time)
-                return isSameDay(aptDate, date) && getHours(aptDate) === hour
-              })
+        <div className="flex-1 overflow-y-auto">
+          {hours.map(hour => {
+            // FILTRO CORRIGIDO: Comparamos a hora desejada com a hora UTC do agendamento
+            const hourAppointments = appointments.filter(apt => {
+              const aptDate = new Date(apt.start_time);
+              // Verifica se é o mesmo dia (em UTC) e a mesma hora (em UTC)
+              return isSameDay(aptDate, date) && getRawHour(apt.start_time) === hour;
+            });
 
-              return (
-                <div key={hour} className="grid grid-cols-[60px_1fr] min-h-[100px] border-b border-zinc-800/50 group hover:bg-zinc-800/20">
-                  <div className="border-r border-zinc-800/50 p-2 text-right">
-                    <span className="text-xs text-zinc-500 font-medium">
-                      {hour.toString().padStart(2, '0')}:00
-                    </span>
-                  </div>
-                  
-                  <div className="p-1 md:p-2 relative flex gap-2 overflow-x-auto">
-                    {isToday(date) && hour === new Date().getHours() && (
-                      <div 
-                        className="absolute w-full h-px bg-red-500 z-10 pointer-events-none opacity-50"
-                        style={{ top: `${(new Date().getMinutes() / 60) * 100}%` }}
-                      />
-                    )}
-
-                    {hourAppointments.map(apt => (
-                      <div key={apt.id} className="flex-1 min-w-[150px] max-w-[250px]">
-                        <AppointmentCard appointment={apt} />
-                      </div>
-                    ))}
-                  </div>
+            return (
+              <div key={hour} className="grid grid-cols-[60px_1fr] min-h-[100px] border-b border-zinc-800/50 group hover:bg-zinc-800/20">
+                <div className="border-r border-zinc-800/50 p-2 text-right">
+                  <span className="text-xs text-zinc-500 font-medium">
+                    {hour.toString().padStart(2, '0')}:00
+                  </span>
                 </div>
-              )
-            })}
-         </div>
+                
+                <div className="p-1 md:p-2 relative flex gap-2 overflow-x-auto">
+                  {hourAppointments.map(apt => (
+                    <div key={apt.id} className="flex-1 min-w-[150px] max-w-[250px]">
+                      <AppointmentCard appointment={apt} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
-    )
+    );
   }
 
   return (
