@@ -2,10 +2,9 @@ import { Metadata } from "next"
 import { createClient } from "@/utils/supabase/server"
 import { redirect } from "next/navigation"
 import { 
-  Users, Search, UserPlus, Phone, Mail, 
-  ChevronRight, FileText, Calendar 
+  Users, Search, Phone, 
+  ChevronRight, FileText 
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
@@ -33,12 +32,13 @@ export default async function ClientesPage({
     .eq('id', user.id)
     .single() as any
 
-  // Busca pacientes com filtro de busca se houver query
+  // Busca pacientes filtrando pela organização
   let customerQuery = supabase
     .from('customers')
-    .select('*') // Agora vai encontrar full_name, document, etc.
+    .select('*')
     .eq('organizations_id', profile.organizations_id)
-    .order('full_name')
+    .order('active', { ascending: false }) // Ativos primeiro
+    .order('full_name', { ascending: true })
 
   if (query) {
     customerQuery = customerQuery.ilike('full_name', `%${query}%`)
@@ -72,42 +72,82 @@ export default async function ClientesPage({
       </div>
 
       <div className="grid gap-4">
-        {customers?.map((customer: any) => (
-          <Link key={customer.id} href={`/clientes/${customer.id}`} prefetch={false}>
-            <Card className="bg-zinc-900/40 border-zinc-800 hover:bg-zinc-900/80 transition-all group cursor-pointer">
-              <CardContent className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-full bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
-                    <span className="text-blue-500 font-bold text-lg">
-                      {customer.full_name.charAt(0).toUpperCase()}
-                    </span>
+        {customers?.map((customer: any) => {
+          // DECLARAÇÃO DA VARIÁVEL DENTRO DO MAP
+          const isActive = customer.active !== false;
+
+          return (
+            <Link 
+              key={customer.id} 
+              href={`/clientes/${customer.id}`} 
+              prefetch={false}
+              className="block group"
+            >
+              <Card className={cn(
+                "bg-zinc-900/40 border-zinc-800 hover:bg-zinc-900/80 transition-all cursor-pointer relative overflow-hidden",
+                !isActive && "opacity-75 border-amber-900/20"
+              )}>
+                
+                {/* Badge de Inativo */}
+                {!isActive && (
+                  <div className="absolute top-0 right-0 bg-amber-500/10 border-l border-b border-amber-500/20 px-3 py-1">
+                    <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">Inativo</span>
                   </div>
-                  <div>
-                    <h3 className="font-bold text-zinc-100 group-hover:text-blue-400 transition-colors">
-                      {customer.full_name}
-                    </h3>
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-zinc-500">
-                      <span className="flex items-center gap-1">
-                        <Phone className="h-3 w-3" /> {customer.phone || 'Sem telefone'}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <FileText className="h-3 w-3" /> {customer.document || 'Sem CPF'}
+                )}
+
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    {/* Avatar colorido conforme status */}
+                    <div className={cn(
+                      "h-12 w-12 rounded-full flex items-center justify-center border transition-colors",
+                      isActive 
+                        ? "bg-blue-500/10 border-blue-500/20" 
+                        : "bg-zinc-800/50 border-zinc-700/50"
+                    )}>
+                      <span className={cn(
+                        "font-bold text-lg",
+                        isActive ? "text-blue-500" : "text-zinc-600"
+                      )}>
+                        {customer.full_name?.charAt(0).toUpperCase() || "P"}
                       </span>
                     </div>
+
+                    <div>
+                      <h3 className={cn(
+                        "font-bold transition-colors",
+                        isActive 
+                          ? "text-zinc-100 group-hover:text-blue-400" 
+                          : "text-zinc-500"
+                      )}>
+                        {customer.full_name}
+                      </h3>
+                      
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-zinc-500">
+                        <span className="flex items-center gap-1">
+                          <Phone className="h-3 w-3" /> {customer.phone || 'Sem telefone'}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <FileText className="h-3 w-3" /> {customer.document || 'Sem CPF'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                
-                <div className="flex items-center gap-4">
-                  <div className="hidden md:flex flex-col items-end text-xs text-zinc-600">
-                    <span>Paciente desde</span>
-                    <span>{new Date(customer.created_at).toLocaleDateString('pt-BR')}</span>
+                  
+                  <div className="flex items-center gap-4">
+                    <div className="hidden md:flex flex-col items-end text-xs text-zinc-600">
+                      <span>Paciente desde</span>
+                      <span>{customer.created_at ? new Date(customer.created_at).toLocaleDateString('pt-BR') : 'N/D'}</span>
+                    </div>
+                    <ChevronRight className={cn(
+                      "h-5 w-5 transition-colors",
+                      isActive ? "text-zinc-700 group-hover:text-zinc-400" : "text-zinc-800"
+                    )} />
                   </div>
-                  <ChevronRight className="h-5 w-5 text-zinc-700 group-hover:text-zinc-400 transition-colors" />
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
+                </CardContent>
+              </Card>
+            </Link>
+          )
+        })}
 
         {customers?.length === 0 && (
           <div className="py-20 text-center border-2 border-dashed border-zinc-800 rounded-xl">
