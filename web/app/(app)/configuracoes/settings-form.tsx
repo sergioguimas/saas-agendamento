@@ -10,8 +10,9 @@ import { updateSettings } from "@/app/actions/update-settings"
 import { toast } from "sonner"
 import { Loader2, Save } from "lucide-react"
 
-export function SettingsForm({ organization }: { organization?: any }) {
+export function SettingsForm({ profile }: { profile: any }) {
   const [loading, setLoading] = useState(false)
+  const organization = profile?.organizations
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()

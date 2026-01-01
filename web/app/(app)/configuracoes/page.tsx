@@ -1,68 +1,37 @@
-import { createClient } from "@/utils/supabase/server"
-import { redirect } from "next/navigation"
-import { SettingsForm } from "./settings-form"
-import { ProfileForm } from "./profile-form"
-import { WhatsappSettings } from "./whatsapp-settings"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Smartphone } from "lucide-react"
+import { createClient } from '@/utils/supabase/server'
+import { redirect } from 'next/navigation'
+import { SettingsForm } from './settings-form'
 
 export default async function SettingsPage() {
   const supabase = await createClient()
-
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return redirect("/login")
-  
+
+  if (!user) redirect('/login')
+
   const { data: profile } = await supabase
     .from('profiles')
-    .select('*, organizations(*)')
+    .select(`
+      *,
+      organizations:organizations_id (*)
+    `)
     .eq('id', user.id)
     .single() as any
 
-  // Pega a organização vinculada ao perfil
-  // @ts-ignore
-  const organization = profile?.organizations
-
-  if (!organization) {
-    return (
-      <div className="p-8 text-red-400">
-        Erro: Nenhuma organização vinculada ao seu perfil.
-      </div>
-    )
-  }
-
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="p-8 space-y-8 bg-black min-h-screen text-zinc-100">
       <div>
-        <h1 className="text-3xl font-bold text-zinc-100">Ajustes</h1>
-        <p className="text-zinc-400">Gerencie os dados da clínica, seu perfil e integrações.</p>
+        <h1 className="text-3xl font-bold tracking-tight">Configurações</h1>
+        <p className="text-zinc-400 text-sm">
+          {profile?.organizations_id 
+            ? "Gerencie as informações da sua clínica." 
+            : "Complete seu cadastro para começar."}
+        </p>
       </div>
 
-      <Tabs defaultValue="clinic" className="w-full">
-        <TabsList className="bg-zinc-900 border border-zinc-800 w-full justify-start h-auto p-1 mb-6 overflow-x-auto">
-          <TabsTrigger value="clinic" className="data-[state=active]:bg-zinc-800 px-4 py-2">
-            Dados da Clínica
-          </TabsTrigger>
-          <TabsTrigger value="profile" className="data-[state=active]:bg-zinc-800 px-4 py-2">
-            Meu Perfil
-          </TabsTrigger>
-          <TabsTrigger value="integrations" className="data-[state=active]:bg-zinc-800 px-4 py-2 gap-2">
-             <Smartphone className="w-4 h-4" />
-             Integrações
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="clinic">
-          <SettingsForm organization={organization} />
-        </TabsContent>
-
-        <TabsContent value="profile">
-          <ProfileForm profile={profile} />
-        </TabsContent>
-
-        <TabsContent value="integrations">
-          <WhatsappSettings />
-        </TabsContent>
-      </Tabs>
+      <div className="max-w-2xl">
+        {/* Passamos o perfil, mesmo que a organização dentro dele seja nula */}
+        <SettingsForm profile={profile} />
+      </div>
     </div>
   )
 }
