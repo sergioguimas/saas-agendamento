@@ -1,14 +1,15 @@
 'use client'
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Button } from "@/components/ui/button"
 import { updateSettings } from "@/app/actions/update-settings"
 import { toast } from "sonner"
-import { Loader2, Save } from "lucide-react"
+import { Loader2, Save, Building2, User, Share2, QrCode } from "lucide-react"
 
 export function SettingsForm({ profile }: { profile: any }) {
   const [loading, setLoading] = useState(false)
@@ -17,156 +18,119 @@ export function SettingsForm({ profile }: { profile: any }) {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setLoading(true)
-    
     const formData = new FormData(event.currentTarget)
     const result = await updateSettings(formData)
-
     setLoading(false)
 
-    if (result?.error) {
-      toast.error(result.error)
-    } else {
-      toast.success("Configurações salvas com sucesso!")
-    }
+    if (result?.error) toast.error(result.error)
+    else toast.success("Configurações salvas!")
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="space-y-6">
       <input type="hidden" name="user_id" value={profile?.id} />
       <input type="hidden" name="org_id" value={profile?.organizations_id || ''} />
-      <Card className="bg-zinc-900 border-zinc-800">
-        <CardHeader>
-          <CardTitle className="text-zinc-100">Dados Institucionais</CardTitle>
-          <CardDescription className="text-zinc-400">
-            Essas informações serão exibidas no cabeçalho dos prontuários e receitas.
-          </CardDescription>
-        </CardHeader>
-        
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name" className="text-zinc-300">Nome da Clínica</Label>
-              <Input 
-                id="name" 
-                name="name" 
-                defaultValue={organization?.name || ''} 
-                className="bg-zinc-950 border-zinc-800 focus:ring-blue-600 text-zinc-100"
-                placeholder="Ex: Consultório Dr. João Silva"
-                required
-              />
-            </div>
 
-            <div className="space-y-2 mb-4 pb-4 border-b border-zinc-800">
-              <Label htmlFor="full_name" className="text-zinc-300">Seu Nome Profissional</Label>
-              <Input 
-                id="full_name" 
-                name="full_name" 
-                defaultValue={profile?.full_name || ''} 
-                className="bg-zinc-950 border-zinc-800 focus:ring-blue-600 text-zinc-100"
-                placeholder="Ex: Dr. Cesar Silva"
-                required
-              />
-              <p className="text-[10px] text-zinc-500 italic">Este nome será usado para assinar as mensagens automáticas.</p>
-            </div>
+      <Tabs defaultValue="organizacao" className="w-full">
+        <TabsList className="grid w-full grid-cols-3 bg-zinc-900 border border-zinc-800">
+          <TabsTrigger value="organizacao" className="gap-2"><Building2 className="h-4 w-4" /> Clínica</TabsTrigger>
+          <TabsTrigger value="profissional" className="gap-2"><User className="h-4 w-4" /> Profissional</TabsTrigger>
+          <TabsTrigger value="api" className="gap-2"><Share2 className="h-4 w-4" /> Integração</TabsTrigger>
+        </TabsList>
 
-            <div className="space-y-2">
-              <Label htmlFor="crm" className="text-zinc-300">Registro Profissional (CRM/CRP)</Label>
-              <Input 
-                id="crm" 
-                name="crm" 
-                defaultValue={organization?.crm || ''} 
-                className="bg-zinc-950 border-zinc-800 focus:ring-blue-600 text-zinc-100"
-                placeholder="Ex: CRM/MG 123456"
-              />
-            </div>
-          </div>
+        {/* ABA 1: ORGANIZAÇÃO */}
+        <TabsContent value="organizacao">
+          <Card className="bg-zinc-900/50 border-zinc-800">
+            <CardHeader>
+              <CardTitle>Dados da Clínica</CardTitle>
+              <CardDescription>Informações institucionais e de contato.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-2">
+                <Label htmlFor="name">Nome da Clínica</Label>
+                <Input id="name" name="name" defaultValue={organization?.name} className="bg-zinc-950 border-zinc-800" required />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="document">CPF/CNPJ</Label>
+                  <Input id="document" name="document" defaultValue={organization?.document} className="bg-zinc-950 border-zinc-800" />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="phone">Telefone Comercial</Label>
+                  <Input id="phone" name="phone" defaultValue={organization?.phone} className="bg-zinc-950 border-zinc-800" />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="email">E-mail Comercial</Label>
+                <Input id="email" name="email" type="email" defaultValue={organization?.email} className="bg-zinc-950 border-zinc-800" />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="address">Endereço</Label>
+                <Textarea id="address" name="address" defaultValue={organization?.address} className="bg-zinc-950 border-zinc-800 min-h-[80px]" />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="document" className="text-zinc-300">CPF ou CNPJ</Label>
-              <Input 
-                id="document" 
-                name="document" 
-                defaultValue={organization?.document || ''} 
-                className="bg-zinc-950 border-zinc-800 focus:ring-blue-600 text-zinc-100"
-                placeholder="Documento para nota fiscal"
-              />
-            </div>
+        {/* ABA 2: PROFISSIONAL */}
+        <TabsContent value="profissional">
+          <Card className="bg-zinc-900/50 border-zinc-800">
+            <CardHeader>
+              <CardTitle>Seu Perfil Profissional</CardTitle>
+              <CardDescription>Como você será identificado nas comunicações.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-2">
+                <Label htmlFor="full_name">Nome de Exibição</Label>
+                <Input id="full_name" name="full_name" defaultValue={profile?.full_name} className="bg-zinc-950 border-zinc-800" required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="crm">Registro Profissional (CRM/CRP)</Label>
+                <Input id="crm" name="crm" defaultValue={organization?.crm} className="bg-zinc-950 border-zinc-800" placeholder="Ex: CRM/SP 123456" />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-            <div className="space-y-2">
-              <Label htmlFor="phone" className="text-zinc-300">Telefone de Contato</Label>
-              <Input 
-                id="phone" 
-                name="phone" 
-                defaultValue={organization?.phone || ''} 
-                className="bg-zinc-950 border-zinc-800 focus:ring-blue-600 text-zinc-100"
-                placeholder="(00) 00000-0000"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-zinc-300">Email Comercial</Label>
-            <Input 
-              id="email" 
-              name="email" 
-              type="email"
-              defaultValue={organization?.email || ''} 
-              className="bg-zinc-950 border-zinc-800 focus:ring-blue-600 text-zinc-100"
-              placeholder="contato@clinic.com"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="address" className="text-zinc-300">Endereço Completo</Label>
-            <Textarea 
-              id="address" 
-              name="address" 
-              defaultValue={organization?.address || ''} 
-              className="bg-zinc-950 border-zinc-800 focus:ring-blue-600 text-zinc-100 min-h-[80px]"
-              placeholder="Rua, Número, Bairro, Cidade - Estado, CEP"
-            />
-          </div>
-        </CardContent>
-
-        <CardFooter className="border-t border-zinc-800 px-6 py-4">
-          <Button type="submit" disabled={loading} className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            {organization ? "Salvar Alterações" : "Concluir Cadastro"}
-          </Button>
-          <div className="pt-4 border-t border-zinc-800 space-y-4">
-            <h4 className="text-sm font-semibold text-zinc-300 flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" /> 
-              Configurações WhatsApp (Evolution API)
-            </h4>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="evolution_url" className="text-zinc-300">URL da Instância</Label>
-                <Input 
-                  id="evolution_url" 
-                  name="evolution_url" 
-                  defaultValue={organization?.evolution_url || ''} 
-                  placeholder="https://api.sua-instancia.com"
-                  className="bg-zinc-950 border-zinc-800 font-mono text-xs"
-                />
+        {/* ABA 3: EVOLUTION API */}
+        <TabsContent value="api">
+          <Card className="bg-zinc-900/50 border-zinc-800">
+            <CardHeader>
+              <CardTitle>Conexão WhatsApp</CardTitle>
+              <CardDescription>Configurações para automação de mensagens.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="evolution_url">URL da Instância</Label>
+                  <Input id="evolution_url" name="evolution_url" defaultValue={organization?.evolution_url} placeholder="https://api.instancia.com" className="bg-zinc-950 border-zinc-800 font-mono text-xs" />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="evolution_apikey">API Key (ApuToken)</Label>
+                  <Input id="evolution_apikey" name="evolution_apikey" type="password" defaultValue={organization?.evolution_apikey} className="bg-zinc-950 border-zinc-800 font-mono text-xs" />
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="evolution_apikey" className="text-zinc-300">API Key (ApuToken)</Label>
-                <Input 
-                  id="evolution_apikey" 
-                  name="evolution_apikey" 
-                  type="password"
-                  defaultValue={organization?.evolution_apikey || ''} 
-                  placeholder="Chave secreta da API"
-                  className="bg-zinc-950 border-zinc-800 font-mono text-xs"
-                />
+              {/* Área do QR Code (Placeholder para próxima etapa) */}
+              <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-zinc-800 rounded-xl bg-zinc-950/50 space-y-4">
+                <QrCode className="h-12 w-12 text-zinc-700" />
+                <div className="text-center">
+                  <p className="text-sm font-medium text-zinc-400">QR Code de Conexão</p>
+                  <p className="text-xs text-zinc-600 italic">Salve as credenciais acima para gerar o código.</p>
+                </div>
+                <Button type="button" variant="outline" size="sm" className="border-zinc-700 text-zinc-400" disabled>
+                  Gerar QR Code
+                </Button>
               </div>
-            </div>
-          </div>
-        </CardFooter>
-      </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      <Button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 h-12 text-white font-bold">
+        {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
+        Salvar Todas as Alterações
+      </Button>
     </form>
   )
 }
