@@ -54,6 +54,19 @@ export function SettingsForm({ profile }: { profile: any }) {
               />
             </div>
 
+            <div className="space-y-2 mb-4 pb-4 border-b border-zinc-800">
+              <Label htmlFor="full_name" className="text-zinc-300">Seu Nome Profissional</Label>
+              <Input 
+                id="full_name" 
+                name="full_name" 
+                defaultValue={profile?.full_name || ''} 
+                className="bg-zinc-950 border-zinc-800 focus:ring-blue-600 text-zinc-100"
+                placeholder="Ex: Dr. Cesar Silva"
+                required
+              />
+              <p className="text-[10px] text-zinc-500 italic">Este nome será usado para assinar as mensagens automáticas.</p>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="crm" className="text-zinc-300">Registro Profissional (CRM/CRP)</Label>
               <Input 
@@ -119,6 +132,37 @@ export function SettingsForm({ profile }: { profile: any }) {
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             {organization ? "Salvar Alterações" : "Concluir Cadastro"}
           </Button>
+          <div className="pt-4 border-t border-zinc-800 space-y-4">
+            <h4 className="text-sm font-semibold text-zinc-300 flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" /> 
+              Configurações WhatsApp (Evolution API)
+            </h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="evolution_url" className="text-zinc-300">URL da Instância</Label>
+                <Input 
+                  id="evolution_url" 
+                  name="evolution_url" 
+                  defaultValue={organization?.evolution_url || ''} 
+                  placeholder="https://api.sua-instancia.com"
+                  className="bg-zinc-950 border-zinc-800 font-mono text-xs"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="evolution_apikey" className="text-zinc-300">API Key (ApuToken)</Label>
+                <Input 
+                  id="evolution_apikey" 
+                  name="evolution_apikey" 
+                  type="password"
+                  defaultValue={organization?.evolution_apikey || ''} 
+                  placeholder="Chave secreta da API"
+                  className="bg-zinc-950 border-zinc-800 font-mono text-xs"
+                />
+              </div>
+            </div>
+          </div>
         </CardFooter>
       </Card>
     </form>

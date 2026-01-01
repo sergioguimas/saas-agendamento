@@ -11,13 +11,19 @@ export async function updateSettings(formData: FormData) {
   if (authError || !user) return { error: "Usuário não autenticado." }
 
   // Coleta dados da Organização e do Perfil
-  const orgData = {
-    name: formData.get("org_name") as string,
+  const data = {
+    name: formData.get("name") as string,
     crm: formData.get("crm") as string,
     document: formData.get("document") as string,
     phone: formData.get("phone") as string,
+    email: formData.get("email") as string,
     address: formData.get("address") as string,
+    // ADICIONE ESTES DOIS:
+    evolution_url: formData.get("evolution_url") as string,
+    evolution_apikey: formData.get("evolution_apikey") as string,
   }
+
+  // E colete o nome do perfil separadamente:
   const full_name = formData.get("full_name") as string
 
   // Busca o perfil atual
@@ -34,7 +40,7 @@ export async function updateSettings(formData: FormData) {
       // --- SETUP INICIAL ---
       const { data: newOrg, error: orgError } = await supabase
         .from('organizations')
-        .insert([{ ...orgData, owner_id: user.id }])
+        .insert([{ ...data, owner_id: user.id }])
         .select()
         .single()
 
@@ -52,7 +58,7 @@ export async function updateSettings(formData: FormData) {
       // --- ATUALIZAÇÃO DE CONFIGURAÇÕES ---
       const { error: orgUpdateError } = await supabase
         .from('organizations')
-        .update(orgData)
+        .update(data)
         .eq('id', currentOrgId)
 
       if (orgUpdateError) throw orgUpdateError
