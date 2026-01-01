@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent } from "@/components/ui/card"
 import { EditCustomerDialog } from "@/components/edit-customer-dialog"
 import { MedicalRecordForm } from "@/components/medical-record-form"
+import { toggleCustomerStatus } from "@/app/actions/toggle-customer-status"
 
 export default async function PacienteDetalhesPage({ 
   params 
@@ -16,7 +17,6 @@ export default async function PacienteDetalhesPage({
 }) {
   const resolvedParams = await params;
   const id = resolvedParams.id;
-
   const supabase = await createClient();
 
   const { data: customer } = await supabase
@@ -26,6 +26,8 @@ export default async function PacienteDetalhesPage({
     .single() as any;
 
   if (!customer) notFound();
+
+  const isActive = customer.active !== false;
 
   const { data: notes } = await supabase
   .from('medical_records')
@@ -55,6 +57,11 @@ export default async function PacienteDetalhesPage({
             <div className="flex gap-4 mt-1 text-sm text-zinc-500">
               <span className="flex items-center gap-1"><User className="h-3 w-3" /> Gênero: {customer.gender || 'N/D'}</span>
               <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {customer.phone}</span>
+              {!isActive && (
+                <span className="ml-3 px-2 py-0.5 text-xs font-medium bg-zinc-800 text-amber-500 border border-amber-500/20 rounded-full">
+                  Paciente Inativo
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -62,9 +69,20 @@ export default async function PacienteDetalhesPage({
         <div className="flex items-center gap-2">
           <Button variant="outline" className="bg-zinc-900 border-zinc-800"><Printer className="mr-2 h-4 w-4" /> Histórico</Button>
           <EditCustomerDialog customer={customer} />
-          <Button variant="destructive" className="bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500 hover:text-white">
-            <Trash2 className="mr-2 h-4 w-4" /> Excluir
-          </Button>
+          <form action={async () => {
+            'use server'
+            await toggleCustomerStatus(customer.id, isActive)
+          }}>
+            <Button 
+              variant="outline" 
+              className={isActive 
+                ? "bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500 hover:text-white"
+                : "bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500 hover:text-white"
+              }
+            >
+              {isActive ? "Desativar Paciente" : "Reativar Paciente"}
+            </Button>
+          </form>
         </div>
       </div>
 
