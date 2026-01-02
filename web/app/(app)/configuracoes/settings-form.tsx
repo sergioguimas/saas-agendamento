@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { updateSettings } from "@/app/actions/update-settings"
-import { WhatsappSettings } from "./whatsapp-settings" // Certifique-se que o arquivo está na mesma pasta
+import { WhatsappSettings } from "./whatsapp-settings"
+import { sendTestMessage } from "@/app/actions/whatsapp-test"
 import { toast } from "sonner"
 import { Loader2, Save, Building2, User, Share2 } from "lucide-react"
 
@@ -154,6 +155,30 @@ export function SettingsForm({ profile }: { profile: any }) {
               </div>
             </CardContent>
           </Card>
+          <div className="mt-6 p-4 border border-zinc-800 rounded-lg bg-zinc-950/50">
+          <h4 className="text-sm font-medium text-zinc-300 mb-4">Teste de Envio</h4>
+          <div className="flex gap-2">
+            <Input 
+              id="test_phone" 
+              placeholder="Seu número (DDD + número)" 
+              className="bg-zinc-900 border-zinc-800"
+            />
+            <Button 
+              type="button"
+              variant="secondary"
+              onClick={async () => {
+                const phone = (document.getElementById('test_phone') as HTMLInputElement).value
+                if(!phone) return toast.error("Digite um número")
+                
+                const res = await sendTestMessage(phone)
+                if(res.success) toast.success("Mensagem enviada!")
+                else toast.error("Erro: " + res.error)
+              }}
+            >
+              Enviar Teste
+            </Button>
+          </div>
+        </div>
         </TabsContent>
       </Tabs>
 
