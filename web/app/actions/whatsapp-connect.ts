@@ -23,6 +23,9 @@ if (!profile?.organizations_id || !profile?.organizations?.slug) {
   return { error: "Organização não encontrada. Verifique o cadastro." }
 }
 
+const url = profile.organizations.evolution_url || EVOLUTION_URL
+const apiKey = profile.organizations.evolution_apikey || EVOLUTION_API_KEY
+
 const instanceName = profile.organizations.slug
 const organizationId = profile.organizations_id
 
