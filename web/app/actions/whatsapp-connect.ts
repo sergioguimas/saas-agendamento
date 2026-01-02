@@ -20,7 +20,8 @@ export async function createWhatsappInstance() {
   .single() as any
 
 if (!profile?.organizations_id || !profile?.organizations?.slug) {
-  return { error: "Organização não encontrada. Verifique o cadastro." }
+    console.log("Perfil buscado:", profile);
+    return { error: "Organização não encontrada. Verifique o cadastro." }
 }
 
 const url = profile.organizations.evolution_url || EVOLUTION_URL
