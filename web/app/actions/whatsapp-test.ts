@@ -7,17 +7,25 @@ export async function sendTestMessage(phoneNumber: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "Não autorizado" }
 
-  // Busca as credenciais e o slug da clínica
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('organizations_id, organizations(slug, evolution_url, evolution_apikey)')
-    .eq('id', user.id)
-    .single() as any
+    // Busca as credenciais e o slug da clínica
+    const { data: profile, error } = await supabase
+        .from('profiles')
+        .select(`
+        organizations_id,
+        organizations:organizations_id (
+            slug,
+            evolution_url,
+            evolution_apikey
+        )
+        `)
+        .eq('id', user.id)
+        .single() as any
 
-  const org = profile?.organizations
-  if (!org?.slug) return { error: "Instância não configurada." }
+    const org = profile?.organizations
+    if (!org?.slug) return { error: "Instância não configurada." }
 
-  const url = `${org.evolution_url}/message/sendText/${org.slug}`
+    const baseUrl = org.evolution_url || "http://127.0.0.1:8082"
+    const url = `${baseUrl}/message/sendText/${org.slug}`
   
   try {
     const response = await fetch(url, {
