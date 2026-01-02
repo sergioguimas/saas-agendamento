@@ -20,6 +20,7 @@ interface SettingsFormProps {
 export function SettingsForm({ profile, whatsappStatus }: SettingsFormProps) {
   const [loading, setLoading] = useState(false)
   const organization = profile?.organizations
+  console.log("DEBUG ORG:", organization)
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
