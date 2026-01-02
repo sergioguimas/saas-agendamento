@@ -7,10 +7,10 @@ import { QrCode, Smartphone, Loader2, CheckCircle2, RefreshCw } from "lucide-rea
 import { createWhatsappInstance, deleteWhatsappInstance } from "@/app/actions/whatsapp-connect"
 import { toast } from "sonner"
 
-export function WhatsappSettings() {
+export function WhatsappSettings({ initialStatus }: { initialStatus?: string | null }) {
   const [loading, setLoading] = useState(false)
   const [qrCode, setQrCode] = useState<string | null>(null)
-  const [isConnected, setIsConnected] = useState(false)
+  const [isConnected, setIsConnected] = useState(initialStatus === 'connected')
 
   // Função para limpar tudo (Reset Nuclear)
   async function handleReset() {

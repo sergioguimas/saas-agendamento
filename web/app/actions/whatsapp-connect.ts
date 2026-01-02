@@ -10,43 +10,26 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 export async function createWhatsappInstance() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  
   if (!user) return { error: "Usuário não autenticado" }
-  
-  const { data: profile, error: dbError } = await supabase
+
+  const { data: profile } = await supabase
     .from('profiles')
-    .select(`
-      organizations_id, 
-      organizations:organizations_id (
-        id,
-        slug, 
-        evolution_url, 
-        evolution_apikey
-      )
-    `)
+    .select('organizations_id, organizations:organizations_id(slug, evolution_url, evolution_apikey)')
     .eq('id', user.id)
     .single() as any
 
-  // LOG DE DEBUG: Verifique no terminal o que aparece aqui
-  console.log("🔍 Perfil encontrado:", profile)
-
-  if (dbError || !profile?.organizations_id) {
-    return { error: "Vínculo com a organização não encontrado no seu perfil." }
+  if (!profile?.organizations_id || !profile?.organizations?.slug) {
+    return { error: "Organização não encontrada ou Slug vazio." }
   }
 
-  if (!profile.organizations?.slug) {
-    return { error: "A clínica foi encontrada, mas o identificador (slug) está vazio." }
-  }
-
-const instanceName = profile.organizations.slug
-const organizationId = profile.organizations_id
-const url = profile.organizations.evolution_url || EVOLUTION_URL
-const apiKey = profile.organizations.evolution_apikey || EVOLUTION_API_KEY
-
-  console.log("🚀 [Evolution v2.3.6] Iniciando Monster Instance:", instanceName)
+  // Declaração correta das variáveis antes do uso
+  const instanceName = profile.organizations.slug
+  const organizationId = profile.organizations_id
+  const EVOLUTION_URL = profile.organizations.evolution_url || "http://127.0.0.1:8082"
+  const EVOLUTION_API_KEY = profile.organizations.evolution_apikey || "medagenda123"
+  const webhookUrl = "https://heterodoxly-unchastened-nichole.ngrok-free.dev/api/webhooks/whatsapp"
 
   try {
-    // 1. Criar Instância
     const createResponse = await fetch(`${EVOLUTION_URL}/instance/create`, {
         method: 'POST',
         headers: {
@@ -58,36 +41,25 @@ const apiKey = profile.organizations.evolution_apikey || EVOLUTION_API_KEY
             token: instanceName,
             qrcode: true,
             integration: "WHATSAPP-BAILEYS",
+            webhook: webhookUrl, // Automação do Webhook
+            webhook_by_events: true,
+            events: ["CONNECTION_UPDATE"],
             reject_call: true,
-            
-            // --- CONFIGURAÇÃO OTIMIZADA V2.3.6 ---
             groupsIgnore: true,
             alwaysOnline: false,
             readMessages: false,
             readStatus: false,
-            syncFullHistory: false, // O segredo da velocidade
-            
-            // Navegador Padrão (Deixe a API gerenciar a versão interna via Docker)
-            browser: ["Chrome (Linux)", "Chrome", "110.0.5481.177"]
+            syncFullHistory: false
         })
     })
 
-    const createData = await createResponse.json()
-    
-    // Log para debug
-    if (!createResponse.ok && createData?.response?.message?.[0] !== "Instance already exists") {
-        console.log("⚠️ Status Criação:", createData)
-    }
-
-    // 2. Deleta registro antigo no banco para garantir status limpo
+    // Remove registro antigo para evitar duplicidade
     await supabase.from('whatsapp_instances')
         .delete()
         .eq('organization_id', organizationId)
 
-    // 3. Buscar QR Code
     const result = await fetchQrCodeLoop(instanceName)
 
-    // 4. Salvar Novo Status
     if (result.qrcode || result.connected) {
       await updateInstanceSettings(instanceName)
       await supabase.from('whatsapp_instances').insert({
@@ -100,13 +72,12 @@ const apiKey = profile.organizations.evolution_apikey || EVOLUTION_API_KEY
 
     return result
 
-  } catch (error) {
+  } catch (error) { // Aqui resolve o erro "'catch' expected"
     console.error("❌ Erro Crítico:", error)
     return { error: "Erro de conexão com API" }
   }
 }
 
-// ... (Mantenha as funções fetchQrCodeLoop e deleteWhatsappInstance iguais)
 async function fetchQrCodeLoop(instanceName: string) {
     let attempts = 0
     const maxAttempts = 20 
@@ -138,8 +109,6 @@ async function fetchQrCodeLoop(instanceName: string) {
 }
 
 export async function deleteWhatsappInstance() {
-    // ... (mesmo código de antes para deletar)
-    // Se não tiver o código fácil, eu mando de novo, mas acho que você já tem.
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: "Auth required" }

@@ -19,6 +19,12 @@ export default async function SettingsPage() {
     .eq('id', user.id)
     .single() as any
 
+  const { data: whatsapp } = await supabase
+    .from('whatsapp_instances')
+    .select('status')
+    .eq('organization_id', profile.organizations_id)
+    .single()
+
   return (
     <div className="p-8 space-y-8 bg-black min-h-screen text-zinc-100">
       <div className="flex flex-col gap-1">
@@ -31,6 +37,7 @@ export default async function SettingsPage() {
       <div className="max-w-2xl">
         {/* Passamos o profile para o formulário carregar os dados existentes */}
         <SettingsForm profile={profile} />
+        <SettingsForm profile={profile} whatsappStatus={whatsapp?.status} />
       </div>
     </div>
   )
