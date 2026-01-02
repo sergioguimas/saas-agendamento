@@ -17,18 +17,7 @@ export default async function SettingsPage() {
     .from('profiles')
     .select(`
       *,
-      organizations:organizations_id (
-        id,
-        name,
-        slug,
-        document,
-        phone,
-        email,
-        address,
-        crm,
-        evolution_url,
-        evolution_apikey
-      )
+      organizations:organizations_id (*)
     `)
     .eq('id', user.id)
     .single() as any

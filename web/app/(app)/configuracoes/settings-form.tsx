@@ -62,7 +62,9 @@ export function SettingsForm({ profile, whatsappStatus }: SettingsFormProps) {
           <Card className="bg-zinc-900 border-zinc-800">
             <CardHeader>
               <CardTitle className="text-zinc-100">Dados Institucionais</CardTitle>
-              <CardDescription className="text-zinc-400">Informações exibidas em documentos e cabeçalhos.</CardDescription>
+              <CardDescription className="text-zinc-400">
+                Informações exibidas em documentos e cabeçalhos.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-2">
@@ -78,20 +80,41 @@ export function SettingsForm({ profile, whatsappStatus }: SettingsFormProps) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="document" className="text-zinc-300">CPF ou CNPJ</Label>
-                  <Input id="document" name="document" defaultValue={organization?.document || ''} className="bg-zinc-950 border-zinc-800" />
+                  <Input 
+                    id="document" 
+                    name="document" 
+                    defaultValue={organization?.document || ''} 
+                    className="bg-zinc-950 border-zinc-800 text-zinc-100" 
+                  />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="phone" className="text-zinc-300">Telefone de Contato</Label>
-                  <Input id="phone" name="phone" defaultValue={organization?.phone || ''} className="bg-zinc-950 border-zinc-800" />
+                  <Input 
+                    id="phone" 
+                    name="phone" 
+                    defaultValue={organization?.phone || ''} 
+                    className="bg-zinc-950 border-zinc-800 text-zinc-100" 
+                  />
                 </div>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="email" className="text-zinc-300">Email Comercial</Label>
-                <Input id="email" name="email" type="email" defaultValue={organization?.email || ''} className="bg-zinc-950 border-zinc-800" />
+                <Input 
+                  id="email" 
+                  name="email" 
+                  type="email" 
+                  defaultValue={organization?.email || ''} 
+                  className="bg-zinc-950 border-zinc-800 text-zinc-100" 
+                />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="address" className="text-zinc-300">Endereço Completo</Label>
-                <Textarea id="address" name="address" defaultValue={organization?.address || ''} className="bg-zinc-950 border-zinc-800 min-h-[80px]" />
+                <Textarea 
+                  id="address" 
+                  name="address" 
+                  defaultValue={organization?.address || ''} 
+                  className="bg-zinc-950 border-zinc-800 text-zinc-100 min-h-[80px]" 
+                />
               </div>
             </CardContent>
           </Card>
