@@ -35,7 +35,6 @@ export function WhatsappSettings({ initialStatus }: { initialStatus?: string | n
     setQrCode(null) 
     
     try {
-      // --- CORREÇÃO AQUI: Adicionamos 'as any' para evitar o erro de TypeScript ---
       const result = await createWhatsappInstance() as any
 
       if (result.error) {

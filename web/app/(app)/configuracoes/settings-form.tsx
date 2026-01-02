@@ -13,13 +13,7 @@ import { sendTestMessage } from "@/app/actions/whatsapp-test"
 import { toast } from "sonner"
 import { Loader2, Save, Building2, User, Share2 } from "lucide-react"
 
-export function SettingsForm({ 
-  profile, 
-  whatsappStatus 
-}: { 
-  profile: any; 
-  whatsappStatus?: string | null 
-}) {
+export function SettingsForm({ profile, whatsappStatus }: { profile: any, whatsappStatus?: string | null }) {
   const [loading, setLoading] = useState(false)
   const organization = profile?.organizations
 

@@ -36,7 +36,6 @@ export default async function SettingsPage() {
 
       <div className="max-w-2xl">
         {/* Passamos o profile para o formulário carregar os dados existentes */}
-        <SettingsForm profile={profile} />
         <SettingsForm profile={profile} whatsappStatus={whatsapp?.status} />
       </div>
     </div>
