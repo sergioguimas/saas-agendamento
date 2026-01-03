@@ -20,22 +20,22 @@ type Appointment = {
   start_time: string
   end_time: string
   status: string | null
-  customers: { full_name: string } | any
+  customers: { name: string } | any
   services: { name: string; color?: string } | any
 }
 
 type Props = {
   appointments: Appointment[]
-  customers: { id: string; full_name: string }[]
+  customers: { id: string; name: string }[]
   services: { id: string; name: string }[]
-  organizations_id: string
+  organization_id: string
 }
 
 const getRawHour = (dateString: string) => {
   return new Date(dateString).getUTCHours();
 };
 
-export function CalendarView({ appointments, customers, services, organizations_id }: Props) {
+export function CalendarView({ appointments, customers, services, organization_id }: Props) {
   const [date, setDate] = useState(new Date())
   const [view, setView] = useState<'month' | 'week' | 'day'>('month')
 
@@ -79,7 +79,7 @@ export function CalendarView({ appointments, customers, services, organizations_
         >
           <div className="flex justify-between items-center w-full">
             <span className="truncate font-bold max-w-[85%]">
-              {appointment.customers?.full_name || 'Sem nome'}
+              {appointment.customers?.name || 'Sem nome'}
             </span>
             {!isScheduled && (
               <config.icon className="h-3 w-3 shrink-0 opacity-80" />
@@ -241,7 +241,7 @@ export function CalendarView({ appointments, customers, services, organizations_
           <CreateAppointmentDialog 
             customers={customers} 
             services={services} 
-            organizations_id={organizations_id} 
+            organization_id={organization_id} 
           />
         </div>
       </div>

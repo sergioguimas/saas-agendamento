@@ -21,16 +21,18 @@ export default async function DashboardPage() {
   if (!user) return redirect('/login')
 
   // 2. Busca Perfil e Organização
+  // CORREÇÃO: organization_id (singular)
   const { data: profile } = await supabase
     .from('profiles')
     .select(`
       *,
-      organizations:organizations_id (name, slug)
+      organizations:organization_id (name, slug)
     `)
     .eq('id', user.id)
     .single() as any
 
-  if (!profile?.organizations_id) redirect('/configuracoes')
+  // CORREÇÃO: organization_id (singular)
+  if (!profile?.organization_id) redirect('/configuracoes')
 
   // 3. Definição do período de "Hoje" para o filtro UTC
   const todayStart = new Date()
@@ -43,14 +45,14 @@ export default async function DashboardPage() {
     supabase
       .from('services')
       .select('*', { count: 'exact', head: true })
-      .eq('organizations_id', profile.organizations_id)
-      .eq('active', true),
+      .eq('organization_id', profile.organization_id) // CORREÇÃO: singular
+      .eq('is_active', true), // CORREÇÃO: active -> is_active
     
     supabase
       .from('customers')
       .select('*', { count: 'exact', head: true })
-      .eq('organizations_id', profile.organizations_id)
-      .eq('active', true),
+      .eq('organization_id', profile.organization_id) // CORREÇÃO: singular
+      .eq('active', true), // Essa coluna criamos na migração recente
 
     supabase
       .from('appointments')
@@ -58,10 +60,11 @@ export default async function DashboardPage() {
         id, 
         start_time, 
         status, 
-        customers(full_name), 
-        services(name, color)
+        customers(name), 
+        services(title, color)
       `)
-      .eq('organizations_id', profile.organizations_id)
+      // CORREÇÕES ACIMA: customers(name) e services(title)
+      .eq('organization_id', profile.organization_id) // CORREÇÃO: singular
       .gte('start_time', todayStart.toISOString())
       .lte('start_time', todayEnd.toISOString())
       .order('start_time', { ascending: true }),
@@ -69,7 +72,7 @@ export default async function DashboardPage() {
     supabase
       .from('appointments')
       .select('status')
-      .eq('organizations_id', profile.organizations_id)
+      .eq('organization_id', profile.organization_id) // CORREÇÃO: singular
   ]) as any
 
   // Cálculos de indicadores
@@ -165,7 +168,7 @@ export default async function DashboardPage() {
         <div className="grid gap-3">
           {resToday.data && resToday.data.length > 0 ? (
             resToday.data.map((app: any) => (
-              /* Cada agendamento da lista agora tem seu próprio Menu de Contexto */
+              /* Context Menu */
               <AppointmentContextMenu 
                 key={app.id}
                 appointment={app} 
@@ -180,13 +183,13 @@ export default async function DashboardPage() {
                     <div className="flex items-center gap-4">
                       {/* Avatar com as iniciais do paciente */}
                       <div className="h-10 w-10 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center font-bold text-xs text-blue-500 group-hover:border-blue-500/50 transition-colors">
-                        {app.customers?.full_name?.substring(0, 2).toUpperCase()}
+                        {app.customers?.name?.substring(0, 2).toUpperCase()}
                       </div>
                       
                       <div>
-                        <p className="font-bold text-sm text-zinc-100">{app.customers?.full_name}</p>
+                        <p className="font-bold text-sm text-zinc-100">{app.customers?.name}</p>
                         <div className="flex items-center gap-2 text-xs text-zinc-400">
-                          <span>{app.services?.name}</span>
+                          <span>{app.services?.title}</span>
                           <span className="text-zinc-700">•</span>
                           <span className="text-blue-400 font-medium">
                             {new Date(app.start_time).toLocaleTimeString('pt-BR', { 

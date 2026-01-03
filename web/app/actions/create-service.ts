@@ -11,7 +11,7 @@ export async function upsertService(formData: FormData) {
   const duration_minutes = Number(formData.get('duration'))
   const price = Number(formData.get('price'))
   const color = formData.get('color') as string || '#3b82f6'
-  const organization_id = formData.get('organizations_id') as string
+  const organization_id = formData.get('organization_id') as string
 
   if (!organization_id || organization_id === 'undefined') {
     return { error: "Erro interno: ID da organização não identificado." }

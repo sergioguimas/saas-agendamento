@@ -19,7 +19,7 @@ const COLORS = [
   { name: 'Vermelho', value: '#ef4444' },
 ]
 
-export function CreateServiceDialog({ organizations_id, serviceToEdit }: { organizations_id: string, serviceToEdit?: any }) {
+export function CreateServiceDialog({ organization_id, serviceToEdit }: { organization_id: string, serviceToEdit?: any }) {
   const [open, setOpen] = useState(false)
   const [selectedColor, setSelectedColor] = useState(serviceToEdit?.color || COLORS[0].value)
 
@@ -51,7 +51,7 @@ export function CreateServiceDialog({ organizations_id, serviceToEdit }: { organ
       <DialogContent className="bg-zinc-900 border-zinc-800 text-white">
         <DialogHeader><DialogTitle>{serviceToEdit ? 'Editar' : 'Novo'} Procedimento</DialogTitle></DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <input type="hidden" name="organizations_id" value={organizations_id} />
+          <input type="hidden" name="organization_id" value={organization_id} />
           {serviceToEdit && (
             <input type="hidden" name="id" value={serviceToEdit.id} />
           )}

@@ -12,7 +12,7 @@ export async function sendAppointmentConfirmation(appointmentId: string) {
     .select(`
       *,
       patient:patient_id(name, phone),
-      organization:organizations_id(slug, evolution_url, evolution_apikey)
+      organization:organization_id(slug, evolution_url, evolution_apikey)
     `)
     .eq('id', appointmentId)
     .single() as any

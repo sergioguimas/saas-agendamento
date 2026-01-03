@@ -22,14 +22,14 @@ export default async function ProcedimentosPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('organizations_id')
+    .select('organization_id')
     .eq('id', user.id)
     .single() as any
 
   const { data: services } = await supabase
     .from('services')
     .select('*')
-    .eq('organizations_id', profile.organizations_id)
+    .eq('organization_id', profile.organization_id)
     .order('name')
 
   return (
@@ -41,8 +41,8 @@ export default async function ProcedimentosPage() {
             Gerencie o catálogo de serviços e especialidades da sua clínica.
           </p>
         </div>
-        
-        <CreateServiceDialog organizations_id={profile.organizations_id} />
+
+        <CreateServiceDialog organization_id={profile.organization_id} />
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {services?.map((service: any) => (
@@ -59,7 +59,7 @@ export default async function ProcedimentosPage() {
                 </div>
                 <div className="flex gap-2">
                   <CreateServiceDialog 
-                    organizations_id={profile.organizations_id} 
+                    organization_id={profile.organization_id} 
                     serviceToEdit={service} 
                   />
                   <DeleteServiceButton serviceId={service.id} />

@@ -11,8 +11,8 @@ export async function sendTestMessage(phoneNumber: string) {
     const { data: profile, error } = await supabase
         .from('profiles')
         .select(`
-        organizations_id,
-        organizations:organizations_id (
+        organization_id,
+        organizations:organization_id (
             slug,
             evolution_url,
             evolution_apikey

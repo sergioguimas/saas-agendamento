@@ -19,7 +19,7 @@ export function EditCustomerDialog({ customer }: { customer: any }) {
     
     const formData = new FormData(event.currentTarget)
     formData.append('id', customer.id)
-    formData.append('organizations_id', customer.organizations_id)
+    formData.append('organization_id', customer.organization_id)
 
     const result = await upsertCustomer(formData)
 
@@ -46,7 +46,7 @@ export function EditCustomerDialog({ customer }: { customer: any }) {
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="grid gap-2">
             <Label>Nome Completo</Label>
-            <Input name="full_name" defaultValue={customer.full_name} required className="bg-zinc-950 border-zinc-800" />
+            <Input name="name" defaultValue={customer.name} required className="bg-zinc-950 border-zinc-800" />
           </div>
           <div className="grid gap-2">
             <Label>Telefone</Label>

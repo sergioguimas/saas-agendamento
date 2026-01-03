@@ -18,10 +18,10 @@ import { toast } from "sonner"
 import { upsertCustomer } from "@/app/actions/create-customer"
 
 type Props = {
-  organizations_id: string
+  organization_id: string
 }
 
-export function CreateCustomerDialog({ organizations_id }: Props) {
+export function CreateCustomerDialog({ organization_id }: Props) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
 
@@ -30,8 +30,8 @@ export function CreateCustomerDialog({ organizations_id }: Props) {
     setLoading(true)
     
     const formData = new FormData(event.currentTarget)
-    // O organizations_id é passado via Prop do Servidor para o Cliente e incluído no formulário
-    formData.append('organizations_id', organizations_id)
+    // O organization_id é passado via Prop do Servidor para o Cliente e incluído no formulário
+    formData.append('organization_id', organization_id)
 
     const result = await upsertCustomer(formData)
 
@@ -62,10 +62,10 @@ export function CreateCustomerDialog({ organizations_id }: Props) {
         
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <Label htmlFor="full_name">Nome Completo</Label>
+            <Label htmlFor="name">Nome Completo</Label>
             <Input 
-              id="full_name" 
-              name="full_name" 
+              id="name" 
+              name="name" 
               placeholder="Ex: João da Silva" 
               required 
               className="bg-zinc-950 border-zinc-800" 

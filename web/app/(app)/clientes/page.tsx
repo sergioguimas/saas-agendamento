@@ -26,22 +26,26 @@ export default async function ClientesPage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  // CORREÇÃO 1: organization_id (singular)
   const { data: profile } = await supabase
     .from('profiles')
-    .select('organizations_id')
+    .select('organization_id')
     .eq('id', user.id)
     .single() as any
 
+  if (!profile?.organization_id) redirect('/configuracoes')
+
   // Busca pacientes filtrando pela organização
+  // CORREÇÃO 2: organization_id (singular)
   let customerQuery = supabase
     .from('customers')
     .select('*')
-    .eq('organizations_id', profile.organizations_id)
-    .order('active', { ascending: false }) // Ativos primeiro
-    .order('full_name', { ascending: true })
+    .eq('organization_id', profile.organization_id) 
+    .order('active', { ascending: false })
+    .order('name', { ascending: true })
 
   if (query) {
-    customerQuery = customerQuery.ilike('full_name', `%${query}%`)
+    customerQuery = customerQuery.ilike('name', `%${query}%`)
   }
 
   const { data: customers } = await customerQuery as any;
@@ -55,7 +59,9 @@ export default async function ClientesPage({
             Gerencie o cadastro e histórico clínico dos seus pacientes.
           </p>
         </div>
-        <CreateCustomerDialog organizations_id={profile.organizations_id} />
+        {/* CORREÇÃO 5: Passando a prop com nome atualizado. 
+            ATENÇÃO: Você precisará atualizar o arquivo do Dialog também! */}
+        <CreateCustomerDialog organization_id={profile.organization_id} />
       </div>
 
       {/* Barra de Busca */}
@@ -73,7 +79,6 @@ export default async function ClientesPage({
 
       <div className="grid gap-4">
         {customers?.map((customer: any) => {
-          // DECLARAÇÃO DA VARIÁVEL DENTRO DO MAP
           const isActive = customer.active !== false;
 
           return (
@@ -88,7 +93,6 @@ export default async function ClientesPage({
                 !isActive && "opacity-75 border-amber-900/20"
               )}>
                 
-                {/* Badge de Inativo */}
                 {!isActive && (
                   <div className="absolute top-0 right-0 bg-amber-500/10 border-l border-b border-amber-500/20 px-3 py-1">
                     <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">Inativo</span>
@@ -97,7 +101,6 @@ export default async function ClientesPage({
 
                 <CardContent className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    {/* Avatar colorido conforme status */}
                     <div className={cn(
                       "h-12 w-12 rounded-full flex items-center justify-center border transition-colors",
                       isActive 
@@ -108,7 +111,7 @@ export default async function ClientesPage({
                         "font-bold text-lg",
                         isActive ? "text-blue-500" : "text-zinc-600"
                       )}>
-                        {customer.full_name?.charAt(0).toUpperCase() || "P"}
+                        {customer.name?.charAt(0).toUpperCase() || "P"}
                       </span>
                     </div>
 
@@ -119,7 +122,7 @@ export default async function ClientesPage({
                           ? "text-zinc-100 group-hover:text-blue-400" 
                           : "text-zinc-500"
                       )}>
-                        {customer.full_name}
+                        {customer.name}
                       </h3>
                       
                       <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-zinc-500">

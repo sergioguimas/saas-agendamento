@@ -12,7 +12,7 @@ export async function createAppointment(formData: FormData) {
   const service_id = formData.get('service_id') as string
   const profile_id = formData.get('staff_id') as string
   const start_time_raw = formData.get('start_time') as string 
-  const organization_id = formData.get('organizations_id') as string 
+  const organization_id = formData.get('organization_id') as string 
 
   if (!customer_id || !service_id || !start_time_raw || !organization_id) {
     return { error: "Campos obrigatórios faltando." }

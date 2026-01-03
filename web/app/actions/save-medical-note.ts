@@ -13,14 +13,14 @@ export async function saveMedicalNote(formData: FormData) {
     return { error: "O prontuário está muito curto para ser salvo." }
   }
 
-  // BUSCA O ORGANIZATIONS_ID DO CLIENTE PARA GARANTIR O VÍNCULO CORRETO
+  // BUSCA O organization_id DO CLIENTE PARA GARANTIR O VÍNCULO CORRETO
   const { data: customer } = await supabase
     .from('customers')
-    .select('organizations_id')
+    .select('organization_id')
     .eq('id', customer_id)
     .single() as any
 
-  if (!customer?.organizations_id) {
+  if (!customer?.organization_id) {
     return { error: "Erro de permissão: Organização não encontrada para este cliente." }
   }
 
@@ -29,7 +29,7 @@ export async function saveMedicalNote(formData: FormData) {
     .insert({
       customer_id,
       content,
-      organizations_id: customer.organizations_id
+      organization_id: customer.organization_id
     } as any)
 
   if (error) {

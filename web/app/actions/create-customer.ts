@@ -7,10 +7,10 @@ export async function upsertCustomer(formData: FormData) {
   const supabase = await createClient()
 
   const id = formData.get('id') as string 
-  const name = formData.get('full_name') as string // Form envia full_name
+  const name = formData.get('name') as string
   const phone = formData.get('phone') as string
   const document = formData.get('document') as string
-  const organization_id = formData.get('organizations_id') as string
+  const organization_id = formData.get('organization_id') as string
 
   const customerData = {
     name,

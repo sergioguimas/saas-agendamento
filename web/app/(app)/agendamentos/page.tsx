@@ -83,7 +83,7 @@ export default async function AgendamentosPage() {
         appointments={mappedAppointments} 
         customers={mappedCustomers} 
         services={mappedServices}
-        organizations_id={orgId}
+        organization_id={orgId}
       />
     </div>
   )

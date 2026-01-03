@@ -13,10 +13,10 @@ import { toast } from "sonner"
 interface Props {
   customers: any[]
   services: any[]
-  organizations_id: string
+  organization_id: string
 }
 
-export function CreateAppointmentDialog({ customers, services, organizations_id }: Props) {
+export function CreateAppointmentDialog({ customers, services, organization_id }: Props) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
 
@@ -25,7 +25,7 @@ export function CreateAppointmentDialog({ customers, services, organizations_id 
     setLoading(true)
 
     const formData = new FormData(event.currentTarget)
-    formData.append('organizations_id', organizations_id)
+    formData.append('organization_id', organization_id)
 
     const result = await createAppointment(formData)
 
@@ -58,7 +58,7 @@ export function CreateAppointmentDialog({ customers, services, organizations_id 
               </SelectTrigger>
               <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
                 {customers.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>{c.full_name}</SelectItem>
+                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
