@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/utils/supabase/server' // Confirme seu caminho de importação
+import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
@@ -10,7 +10,7 @@ export async function signIn(formData: FormData) {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
   
-  const supabase = await createClient() // Await aqui
+  const supabase = await createClient()
 
   const { error } = await supabase.auth.signInWithPassword({
     email,
@@ -33,7 +33,7 @@ export async function signUp(formData: FormData) {
   const password = formData.get('password') as string
   const fullName = formData.get('fullName') as string
   
-  const supabase = await createClient() // Await aqui
+  const supabase = await createClient()
 
   const { error } = await supabase.auth.signUp({
     email,
@@ -50,13 +50,14 @@ export async function signUp(formData: FormData) {
     return { error: error.message }
   }
 
-  //return { success: 'Verifique seu email para confirmar o cadastro.' }
   redirect('/setup')
 }
 
 // Função de Criar Empresa
 export async function createCompany(formData: FormData) {
-  const supabase = await createClient() // Await aqui
+  // CORREÇÃO CRÍTICA: 'as any' força o TypeScript a aceitar o cliente
+  // mesmo que ele não reconheça a tabela organizations nos tipos globais.
+  const supabase = await createClient() as any 
   
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
@@ -65,12 +66,13 @@ export async function createCompany(formData: FormData) {
 
   const companyName = formData.get('companyName') as string
   
+  // Geração de slug simples
   const slug = companyName.toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, "")
     .replace(/[^\w\s-]/g, '')
     .replace(/\s+/g, '-') + '-' + Math.floor(Math.random() * 10000)
 
-  // Agora usando 'organizations' corretamente
+  // Inserção na tabela organizations
   const { data: org, error: orgError } = await supabase
     .from('organizations') 
     .insert({
@@ -93,6 +95,7 @@ export async function createCompany(formData: FormData) {
     return { error: 'Erro ao criar a empresa. Tente outro nome.' }
   }
 
+  // Atualização do perfil do dono
   const { error: profileError } = await supabase
     .from('profiles')
     .update({
@@ -115,7 +118,7 @@ export async function createCompany(formData: FormData) {
 
 // Função de Logout
 export async function signOut() {
-  const supabase = await createClient() // Await aqui
+  const supabase = await createClient()
   await supabase.auth.signOut()
   return redirect('/auth/login')
 }

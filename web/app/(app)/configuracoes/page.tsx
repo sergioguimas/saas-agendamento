@@ -12,7 +12,6 @@ export default async function SettingsPage() {
   }
 
   // 2. Buscar perfil completo com os dados da organização vinculada
-  // O 'as any' aqui já estava salvando o perfil de erros de tipagem
   const { data: profile } = await supabase
     .from('profiles')
     .select(`
@@ -23,7 +22,6 @@ export default async function SettingsPage() {
     .single() as any
 
   // 3. Buscar o status atual da instância de WhatsApp no banco
-  // CORREÇÃO: Adicionamos 'as any' aqui para evitar o erro "type never" no Vercel
   const { data: whatsapp } = await supabase
     .from('whatsapp_instances')
     .select('status')
@@ -42,7 +40,6 @@ export default async function SettingsPage() {
       </div>
 
       <div className="grid gap-4">
-        {/* 4. Passamos o perfil e o status do WhatsApp para o Formulário */}
         <SettingsForm 
           profile={profile} 
           whatsappStatus={whatsapp?.status || 'disconnected'} 
