@@ -21,26 +21,36 @@ export default async function middleware(request: NextRequest) {
     }
   )
 
+  // Busca o usuário logado
   const { data: { user } } = await supabase.auth.getUser()
 
   // 1. DEFINIÇÃO DAS VARIÁVEIS DE ROTA
   const pathname = request.nextUrl.pathname
   const isSetupPage = pathname === '/setup'
   const isAuthPage = pathname === '/login' || pathname === '/signup' || pathname === '/'
-  const isPublicFile = pathname.includes('.') // Ignora imagens, favicons, etc.
+  
+  // Ignora arquivos estáticos para não gastar processamento
+  if (pathname.includes('.') || pathname.startsWith('/_next')) {
+    return response
+  }
 
-  if (isPublicFile) return response
-
-  // 2. VERIFICAÇÃO DE ORGANIZAÇÃO
+  // 2. VERIFICAÇÃO DE ORGANIZAÇÃO (CORRIGIDO: organization_id singular)
   let hasOrganization = false
+  
   if (user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('organizations_id')
-      .eq('id', user.id)
-      .single()
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('organization_id') // <--- AQUI ESTAVA O ERRO (era organizations_id)
+        .eq('id', user.id)
+        .single()
 
-    hasOrganization = !!profile?.organizations_id
+      hasOrganization = !!profile?.organization_id
+    } catch (error) {
+      console.error("Middleware Error:", error)
+      // Se der erro no banco, assume sem organização para evitar loop infinito
+      hasOrganization = false 
+    }
   }
 
   // 3. REGRAS DE REDIRECIONAMENTO
@@ -55,14 +65,10 @@ export default async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/setup', request.url))
   }
 
-  // Se já está tudo OK e tenta voltar para login ou setup
-  if (user && hasOrganization && (isAuthPage || isSetupPage)) {
+  // Se já tem organização e tenta voltar pro setup ou login
+  if (user && hasOrganization && (isSetupPage || isAuthPage)) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
   return response
-}
-
-export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 }
