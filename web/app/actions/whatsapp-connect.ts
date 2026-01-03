@@ -5,7 +5,6 @@ import { createClient } from "@/utils/supabase/server"
 // Configurações Padrão
 const DEFAULT_EVOLUTION_URL = process.env.NEXT_PUBLIC_EVOLUTION_API_URL || "http://127.0.0.1:8082"
 const GLOBAL_API_KEY = process.env.EVOLUTION_API_KEY || "medagenda123"
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
@@ -31,10 +30,10 @@ export async function createWhatsappInstance() {
   const EVOLUTION_URL = profile.organizations.evolution_api_url || DEFAULT_EVOLUTION_URL
   const API_KEY = profile.organizations.evolution_api_key || GLOBAL_API_KEY
   
-  console.log(`🔌 Criando instância: ${instanceName} em ${EVOLUTION_URL}`)
+  console.log(`🔌 Verificando instância: ${instanceName} em ${EVOLUTION_URL}`)
 
   try {
-    // 2. CRIAÇÃO SIMPLIFICADA (Payload Mínimo para evitar erros de validação)
+    // 2. Tenta CRIAR a instância
     const createResponse = await fetch(`${EVOLUTION_URL}/instance/create`, {
         method: 'POST',
         headers: {
@@ -51,24 +50,38 @@ export async function createWhatsappInstance() {
 
     const createData = await createResponse.json()
     
-    // Ignora erro se a instância já existir
-    if (!createResponse.ok && createData?.error && !createData.message?.includes("already exists") && !createData.error?.includes("already exists")) {
+    // === CORREÇÃO AQUI: Detecção robusta de "Já Existe" ===
+    let isAlreadyExists = false
+    
+    // Verifica se a mensagem de erro contém "already in use" ou "already exists"
+    // Funciona para texto simples OU array de mensagens
+    const msg = JSON.stringify(createData).toLowerCase()
+    if (msg.includes("already in use") || msg.includes("already exists")) {
+      isAlreadyExists = true
+    }
+
+    // Se deu erro E NÃO É porque já existe, aí sim paramos
+    if (!createResponse.ok && !isAlreadyExists) {
         console.error("Erro Evolution:", createData)
         return { error: `Erro na API: ${JSON.stringify(createData.response || createData)}` }
     }
+    // =======================================================
 
-    // 3. Limpa instância antiga do banco
+    // 3. Limpa referência antiga no banco (se houver duplicidade local)
     await supabase.from('whatsapp_instances')
         .delete()
         .eq('organization_id', organizationId)
 
-    // 4. Configura Comportamento
-    await updateInstanceSettings(instanceName, EVOLUTION_URL, API_KEY)
+    // 4. Se já existia, garante que as configurações estão certas
+    if (isAlreadyExists) {
+       await updateInstanceSettings(instanceName, EVOLUTION_URL, API_KEY)
+    }
 
-    // 5. Busca o QR Code (Loop de tentativas)
+    // 5. Busca Status / QR Code
+    // Se já estiver conectado, essa função vai detectar e retornar connected: true
     const result = await fetchQrCodeLoop(instanceName, EVOLUTION_URL, API_KEY)
 
-    // 6. Salva no Banco de Dados
+    // 6. Atualiza o Banco de Dados com o Status Real
     if (result.qrcode || result.connected) {
       const { error: dbError } = await supabase.from('whatsapp_instances').insert({
         organization_id: organizationId,
@@ -103,23 +116,23 @@ async function fetchQrCodeLoop(instanceName: string, url: string, apiKey: string
             
             const data = await response.json()
 
-            // Sucesso: Retorna QR Code
-            if (data.base64) { 
-                return { success: true, qrcode: data.base64 }
+            // Caso 1: Retorna QR Code
+            if (data.base64 || data.qrcode?.base64) { 
+                return { success: true, qrcode: data.base64 || data.qrcode?.base64 }
             }
             
-            // Sucesso: Já conectado
-            if (data.instance?.status === 'open' || data.instance?.state === 'open') {
+            // Caso 2: Já conectado (Evolution retorna isso de várias formas dependendo da versão)
+            const state = data.instance?.state || data.instance?.status
+            if (state === 'open' || state === 'connected') {
                 return { success: true, connected: true }
             }
             
-            await delay(1500)
+            await delay(1000)
         } catch (e) {
-            console.log(`Tentativa ${attempts} falhou, tentando novamente...`)
-            await delay(1500)
+            await delay(1000)
         }
     }
-    return { error: "Instância criada, mas QR Code demorou. Tente clicar em 'Atualizar' em instantes." }
+    return { error: "Não foi possível obter o status. Tente atualizar a página." }
 }
 
 async function updateInstanceSettings(instanceName: string, url: string, apiKey: string) {
@@ -139,7 +152,7 @@ async function updateInstanceSettings(instanceName: string, url: string, apiKey:
             })
         })
     } catch (error) {
-        console.error("Erro não-crítico ao atualizar settings:", error)
+        // Ignora erro de settings, não é crítico
     }
 }
 
@@ -163,7 +176,6 @@ export async function deleteWhatsappInstance() {
             await fetch(`${EVOLUTION_URL}/instance/delete/${instanceName}`, {
                 method: 'DELETE', headers: { 'apikey': API_KEY }
             })
-            // (Logout)
             await fetch(`${EVOLUTION_URL}/instance/logout/${instanceName}`, {
                 method: 'DELETE', headers: { 'apikey': API_KEY }
             })
