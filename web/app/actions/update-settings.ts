@@ -6,15 +6,14 @@ import { revalidatePath } from 'next/cache'
 export async function updateSettings(formData: FormData) {
   const supabase = await createClient()
 
-  // 1. Segurança: Pega o ID direto da sessão (Infalível)
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Não autorizado' }
 
-  // 2. Sanitização dos IDs
+  // Sanitização do ID da Org
   let orgId = formData.get('org_id') as string
   if (orgId === 'undefined' || orgId === 'null') orgId = ''
 
-  // 3. Coleta dos Dados
+  // Dados capturados
   const orgData = {
     name: formData.get('name') as string,
     document: formData.get('document') as string,
@@ -31,71 +30,49 @@ export async function updateSettings(formData: FormData) {
   }
 
   try {
-    // === CENÁRIO A: ATUALIZAR CLÍNICA EXISTENTE ===
-    if (orgId) {
-      const { error: orgError } = await supabase
+    // === CENÁRIO 1: CRIAR NOVA CLÍNICA (Primeiro Acesso) ===
+    if (!orgId && orgData.name) {
+      // Chamamos a função SQL "Super Poderosa" que criamos
+      const { data: newId, error: rpcError } = await supabase.rpc('create_new_organization' as any, {
+        org_name: orgData.name,
+        org_document: orgData.document,
+        org_phone: orgData.phone,
+        org_email: orgData.email,
+        org_address: orgData.address,
+        org_evolution_url: orgData.evolution_api_url,
+        org_evolution_key: orgData.evolution_api_key
+      })
+
+      if (rpcError) {
+        console.error('Erro RPC Create:', rpcError)
+        return { error: 'Erro ao criar organização: ' + rpcError.message }
+      }
+      
+      // O ID já vem vinculado do banco
+      orgId = newId
+    } 
+    // === CENÁRIO 2: ATUALIZAR CLÍNICA EXISTENTE ===
+    else if (orgId) {
+      const { error: updateError } = await supabase
         .from('organizations')
         .update(orgData)
         .eq('id', orgId)
 
-      if (orgError) {
-        console.error('Erro Update Org:', orgError)
+      if (updateError) {
+        console.error('Erro Update Org:', updateError)
         return { error: 'Erro ao atualizar dados da clínica.' }
       }
-    } 
-    // === CENÁRIO B: CRIAR NOVA CLÍNICA (Primeiro Acesso) ===
-    else if (orgData.name) {
-      // Gera slug simples
-      const slug = orgData.name.toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-') + '-' + Math.random().toString(36).substring(2, 7)
-      
-      const { data: newOrg, error: createError } = await supabase
-        .from('organizations')
-        .insert({
-          ...orgData,
-          slug,
-          // owner_id não existe mais na tabela, o vínculo é pelo profile
-        })
-        .select()
-        .single()
-
-      if (createError) {
-        console.error('Erro Create Org:', createError)
-        return { error: 'Erro ao criar organização.' }
-      }
-
-      // Define o ID recém criado para vincular no perfil abaixo
-      orgId = newOrg.id
     }
 
-    // === ATUALIZAÇÃO DO PERFIL (MÉDICO) ===
-    // Aqui usamos user.id (seguro) em vez do que vem do form
-    
-    // Prepara dados do perfil
-    const updates: any = { ...profileData }
-    
-    // Se acabamos de criar/descobrir a org, vincula o médico a ela e torna dono
-    if (orgId) {
-      updates.organization_id = orgId
-      
-      // Verifica se o usuário já tem role, se não, vira Owner da nova org
-      const { data: currentProfile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-      if (!currentProfile?.role) {
-        updates.role = 'owner'
-      }
-    }
-
-    // Usa UPSERT para garantir que funciona mesmo se o perfil não existir
+    // === ATUALIZAR DADOS PESSOAIS (MÉDICO) ===
     const { error: profileError } = await supabase
       .from('profiles')
-      .upsert({
-        id: user.id,
-        ...updates
-      })
+      .update(profileData)
+      .eq('id', user.id)
 
     if (profileError) {
       console.error('Erro Update Profile:', profileError)
-      return { error: 'Erro ao atualizar perfil.' }
+      return { error: 'Erro ao atualizar seu perfil.' }
     }
 
     revalidatePath('/configuracoes')
