@@ -1,44 +1,61 @@
 'use server'
 
-import { createClient } from '@/utils/supabase/server'
-import { revalidatePath } from 'next/cache'
-import { addMinutes } from 'date-fns'
+import { createClient } from "@/utils/supabase/server"
+import { sendAppointmentConfirmation } from "./whatsapp-messages"
+import { revalidatePath } from "next/cache"
 
 export async function createAppointment(formData: FormData) {
   const supabase = await createClient()
 
-  const customer_id = formData.get('customer_id') as string
-  const service_id = formData.get('service_id') as string
-  const start_time_raw = formData.get('start_time') as string // "2026-01-01T12:50"
-  const organizations_id = formData.get('organizations_id') as string
+  // 1. Extração e tratamento dos dados do formulário
+  const patientId = formData.get('patientId') as string
+  const orgId = formData.get('orgId') as string
+  const serviceId = formData.get('serviceId') as string
+  const staffId = formData.get('staffId') as string
+  const date = formData.get('date') as string // Ex: "2024-10-25"
+  const time = formData.get('time') as string // Ex: "14:30"
+  const procedureName = formData.get('procedureName') as string || "Consulta"
 
-  const { data: service } = await supabase
-    .from('services')
-    .select('duration')
-    .eq('id', service_id)
-    .single()
+  // 2. Formatação para ISO Strings (exigido por colunas timestamptz)
+  // Assumindo uma duração padrão de 30 minutos para o end_time
+  const startDateTime = new Date(`${date}T${time}`)
+  const endDateTime = new Date(startDateTime.getTime() + 30 * 60000)
 
-  const duration = service?.duration || 30
-  
-  // SOLUÇÃO: Criamos a data e forçamos ela a ser salva exatamente como escrita
-  // sem conversão de fuso no momento do insert
-  const start_date = new Date(start_time_raw)
-  const end_date = addMinutes(start_date, duration)
-
-  const { error } = await supabase
+  // 3. Inserção no banco de dados com os nomes de colunas corretos
+  const { data: appointment, error } = await supabase
     .from('appointments')
     .insert({
-      customer_id,
-      service_id,
-      // Usamos .toISOString() mas garantimos que o banco trate como timestamp sem timezone se necessário
-      start_time: start_date.toISOString(), 
-      end_time: end_date.toISOString(),
-      organizations_id,
-      status: 'scheduled'
-    } as any)
+      client_id: patientId,        // Corrigido de patient_id -> client_id
+      organization_id: orgId,      // Corrigido de organizations_id -> organization_id
+      service_id: serviceId,       // Obrigatório conforme seu schema
+      staff_id: staffId,           // Obrigatório conforme seu schema
+      start_time: startDateTime.toISOString(), // Obrigatório
+      end_time: endDateTime.toISOString(),     // Obrigatório
+      status: 'pending',           // Status inicial para o fluxo de WhatsApp
+      notes: procedureName         // Usando o campo notes para guardar o nome do procedimento
+    })
+    .select()
+    .single()
 
-  if (error) return { error: error.message }
+  if (error) {
+    console.error("❌ Erro ao criar agendamento:", error.message)
+    return { error: `Erro no banco: ${error.message}` }
+  }
 
+  // 4. Disparo da Automação de WhatsApp
+  if (appointment) {
+    try {
+      // Enviamos a confirmação. O ID agora é garantido pelo .select().single()
+      await sendAppointmentConfirmation(appointment.id)
+    } catch (wsError) {
+      console.error("⚠️ Agendamento criado, mas falha no envio do WhatsApp:", wsError)
+      // Não retornamos erro aqui para não confundir o usuário, já que a consulta foi salva
+    }
+  }
+
+  // Atualiza a interface da agenda
   revalidatePath('/agendamentos')
-  return { success: true }
+  revalidatePath('/dashboard')
+
+  return { success: true, data: appointment }
 }
