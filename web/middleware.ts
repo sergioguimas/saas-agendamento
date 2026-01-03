@@ -2,10 +2,12 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export default async function middleware(request: NextRequest) {
+  // Configuração padrão de resposta
   let response = NextResponse.next({
     request: { headers: request.headers },
   })
 
+  // Conecta ao Supabase para gerenciar os cookies de sessão
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -21,54 +23,13 @@ export default async function middleware(request: NextRequest) {
     }
   )
 
-  // Busca o usuário logado
-  const { data: { user } } = await supabase.auth.getUser()
+  // Apenas atualiza a sessão (essencial para o Auth funcionar)
+  await supabase.auth.getUser()
 
-  // 1. DEFINIÇÃO DAS VARIÁVEIS DE ROTA
-  const pathname = request.nextUrl.pathname
-  const isSetupPage = pathname === '/setup'
-  const isAuthPage = pathname === '/login' || pathname === '/signup' || pathname === '/'
+  // --- MODO DE SEGURANÇA ---
+  // Removi toda a lógica de bloqueio de organização temporariamente.
+  // Isso vai permitir que o site carregue. Se o problema for conexão com o banco,
+  // o erro vai aparecer na tela do navegador (client-side), o que é muito mais fácil de corrigir.
   
-  // Ignora arquivos estáticos para não gastar processamento
-  if (pathname.includes('.') || pathname.startsWith('/_next')) {
-    return response
-  }
-
-  // 2. VERIFICAÇÃO DE ORGANIZAÇÃO (CORRIGIDO: organization_id singular)
-  let hasOrganization = false
-  
-  if (user) {
-    try {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('organization_id') // <--- AQUI ESTAVA O ERRO (era organizations_id)
-        .eq('id', user.id)
-        .single()
-
-      hasOrganization = !!profile?.organization_id
-    } catch (error) {
-      console.error("Middleware Error:", error)
-      // Se der erro no banco, assume sem organização para evitar loop infinito
-      hasOrganization = false 
-    }
-  }
-
-  // 3. REGRAS DE REDIRECIONAMENTO
-  
-  // Se não está logado e tenta acessar área restrita
-  if (!user && !isAuthPage) {
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
-
-  // Se está logado, mas não tem empresa e não está na página de setup
-  if (user && !hasOrganization && !isSetupPage) {
-    return NextResponse.redirect(new URL('/setup', request.url))
-  }
-
-  // Se já tem organização e tenta voltar pro setup ou login
-  if (user && hasOrganization && (isSetupPage || isAuthPage)) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
-  }
-
   return response
 }
