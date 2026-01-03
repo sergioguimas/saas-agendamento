@@ -1,19 +1,23 @@
 'use server'
 
-import { createClient } from '@/utils/supabase/server'
-import { revalidatePath } from 'next/cache'
+import { createClient } from "@/utils/supabase/server"
+import { revalidatePath } from "next/cache"
 
-export async function cancelAppointment(appointmentId: string) {
-  const supabase = await createClient()
+export async function cancelAppointment(formData: FormData) {
+  const appointmentId = formData.get('appointmentId') as string
+  
+  const supabase = await createClient() as any
 
   const { error } = await supabase
     .from('appointments')
-    .update({ status: 'canceled' } as any)
+    .update({ status: 'canceled' })
     .eq('id', appointmentId)
 
-  if (error) return { error: error.message }
+  if (error) {
+    console.error("Erro ao cancelar:", error)
+    return { error: error.message }
+  }
 
   revalidatePath('/agendamentos')
-  revalidatePath('/dashboard')
   return { success: true }
 }
