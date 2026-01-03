@@ -1,61 +1,83 @@
 'use server'
 
-import { createClient } from "@/utils/supabase/server"
+import { createClient } from '@/utils/supabase/server'
+import { revalidatePath } from 'next/cache'
+import { addMinutes } from 'date-fns'
 import { sendAppointmentConfirmation } from "./whatsapp-messages"
-import { revalidatePath } from "next/cache"
+import { SupabaseClient } from '@supabase/supabase-js'
+
+// --- DEFINIÇÃO LOCAL PARA FORÇAR O TYPE ---
+// Isso garante que o TS aceite suas colunas independente do database.types.ts global
+type LocalAppointmentInsert = {
+  patient_id: string
+  organizations_id: string
+  service_id: string
+  staff_id: string
+  start_time: string
+  end_time: string
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show'
+  notes?: string
+}
 
 export async function createAppointment(formData: FormData) {
-  const supabase = await createClient()
+  const supabase = await createClient() as unknown as SupabaseClient<any>
 
-  // 1. Extração e tratamento dos dados do formulário
-  const patientId = formData.get('patientId') as string
-  const orgId = formData.get('orgId') as string
-  const serviceId = formData.get('serviceId') as string
-  const staffId = formData.get('staffId') as string
-  const date = formData.get('date') as string // Ex: "2024-10-25"
-  const time = formData.get('time') as string // Ex: "14:30"
-  const procedureName = formData.get('procedureName') as string || "Consulta"
+  const customer_id = formData.get('customer_id') as string
+  const service_id = formData.get('service_id') as string
+  const staff_id = formData.get('staff_id') as string
+  const start_time_raw = formData.get('start_time') as string 
+  const organizations_id = formData.get('organizations_id') as string 
 
-  // 2. Formatação para ISO Strings (exigido por colunas timestamptz)
-  // Assumindo uma duração padrão de 30 minutos para o end_time
-  const startDateTime = new Date(`${date}T${time}`)
-  const endDateTime = new Date(startDateTime.getTime() + 30 * 60000)
+  // Validação
+  if (!customer_id || !service_id || !start_time_raw || !organizations_id) {
+    console.error("Campos faltando:", { customer_id, service_id, start_time_raw, organizations_id })
+    return { error: "Campos obrigatórios faltando." }
+  }
 
-  // 3. Inserção no banco de dados com os nomes de colunas corretos
-  const { data: appointment, error } = await supabase
-    .from('appointments')
-    .insert({
-      client_id: patientId,        // Corrigido de patient_id -> client_id
-      organization_id: orgId,      // Corrigido de organizations_id -> organization_id
-      service_id: serviceId,       // Obrigatório conforme seu schema
-      staff_id: staffId,           // Obrigatório conforme seu schema
-      start_time: startDateTime.toISOString(), // Obrigatório
-      end_time: endDateTime.toISOString(),     // Obrigatório
-      status: 'pending',           // Status inicial para o fluxo de WhatsApp
-      notes: procedureName         // Usando o campo notes para guardar o nome do procedimento
-    })
+  // Busca duração do serviço
+  const { data: service } = await supabase
+    .from('services')
+    .select('duration')
+    .eq('id', service_id)
+    .single()
+
+  const duration = service?.duration || 30
+  const start_date = new Date(start_time_raw)
+  const end_date = addMinutes(start_date, duration)
+
+  // Monta o objeto de inserção explicitamente
+  const newAppointment: LocalAppointmentInsert = {
+    patient_id: customer_id,
+    organizations_id: organizations_id,
+    service_id: service_id,
+    staff_id: staff_id,
+    start_time: start_date.toISOString(),
+    end_time: end_date.toISOString(),
+    status: 'pending',
+    notes: 'Agendamento via Sistema'
+  }
+
+  // INSERT
+  const { data: appointment, error: insertError } = await supabase
+    .from('appointments') 
+    .insert(newAppointment)
     .select()
     .single()
 
-  if (error) {
-    console.error("❌ Erro ao criar agendamento:", error.message)
-    return { error: `Erro no banco: ${error.message}` }
+  if (insertError) {
+    console.error("Erro REAL do Banco de Dados:", insertError.message)
+    return { error: `Erro ao salvar: ${insertError.message}` }
   }
 
-  // 4. Disparo da Automação de WhatsApp
+  // Disparo do WhatsApp
   if (appointment) {
     try {
-      // Enviamos a confirmação. O ID agora é garantido pelo .select().single()
       await sendAppointmentConfirmation(appointment.id)
-    } catch (wsError) {
-      console.error("⚠️ Agendamento criado, mas falha no envio do WhatsApp:", wsError)
-      // Não retornamos erro aqui para não confundir o usuário, já que a consulta foi salva
+    } catch (err) {
+      console.error("Erro ao enviar WhatsApp:", err)
     }
   }
 
-  // Atualiza a interface da agenda
   revalidatePath('/agendamentos')
-  revalidatePath('/dashboard')
-
-  return { success: true, data: appointment }
+  return { success: true }
 }
