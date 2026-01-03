@@ -105,3 +105,54 @@ Confirme sua presença abaixo 👇`
     return { error: "Erro de conexão" }
   }
 }
+
+export async function sendAppointmentCancellation(appointmentId: string) {
+  const supabase = await createClient()
+
+  // 1. Busca dados
+  const { data: appointment } = await supabase
+    .from('appointments')
+    .select(`
+      *,
+      customers ( name, phone ),
+      services ( title ),
+      organizations ( slug, evolution_api_url, evolution_api_key )
+    `)
+    .eq('id', appointmentId)
+    .single() as any
+
+  if (!appointment?.customers?.phone || !appointment?.organizations?.slug) return
+
+  // 2. Configura API
+  const instanceName = appointment.organizations.slug
+  const EVOLUTION_URL = appointment.organizations.evolution_api_url || DEFAULT_EVOLUTION_URL
+  const API_KEY = appointment.organizations.evolution_api_key || GLOBAL_API_KEY
+  
+  const rawPhone = appointment.customers.phone.replace(/\D/g, "")
+  const phone = rawPhone.startsWith("55") ? rawPhone : `55${rawPhone}`
+
+  // 3. Monta Mensagem
+  const dateObj = new Date(appointment.start_time)
+  const dateStr = format(dateObj, "dd/MM 'às' HH:mm", { locale: ptBR })
+  const primeiroNome = appointment.customers.name.split(' ')[0]
+
+  const message = `Olá *${primeiroNome}*,
+
+⚠️ *Agendamento Cancelado*
+
+O procedimento *${appointment.services?.title}* previsto para *${dateStr}* foi cancelado.
+
+Se precisar reagendar, entre em contato conosco.
+Obrigado.`
+
+  // 4. Envia
+  try {
+    await fetch(`${EVOLUTION_URL}/message/sendText/${instanceName}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': API_KEY },
+      body: JSON.stringify({ number: phone, text: message })
+    })
+  } catch (err) {
+    console.error("Erro ao enviar cancelamento:", err)
+  }
+}

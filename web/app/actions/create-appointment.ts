@@ -8,6 +8,9 @@ import { sendAppointmentConfirmation } from "./whatsapp-messages"
 export async function createAppointment(formData: FormData) {
   const supabase = await createClient()
 
+  // 1. Pega o usuário logado para definir como "Dono" do agendamento
+  const { data: { user } } = await supabase.auth.getUser()
+
   const customer_id = formData.get('customer_id') as string
   const service_id = formData.get('service_id') as string
   const staff_id_raw = formData.get('staff_id') as string
@@ -18,8 +21,11 @@ export async function createAppointment(formData: FormData) {
     return { error: "Campos obrigatórios faltando." }
   }
 
-  // Tratamento do Staff ID (Se vier vazio, vira null para não dar erro de UUID)
-  const profile_id = staff_id_raw && staff_id_raw !== 'undefined' ? staff_id_raw : null
+  // === CORREÇÃO: Define o Médico Responsável ===
+  // Se o formulário mandou um staff, usa ele. Se não mandou, usa VOCÊ (usuário logado).
+  const profile_id = (staff_id_raw && staff_id_raw !== 'undefined') 
+    ? staff_id_raw 
+    : user?.id || null
 
   // Busca duração do serviço
   const { data: service } = await supabase
@@ -36,10 +42,10 @@ export async function createAppointment(formData: FormData) {
     customer_id,
     organization_id,
     service_id,
-    profile_id, // Pode ser null
+    profile_id, // Agora este campo vai preenchido!
     start_time: start_date.toISOString(),
     end_time: end_date.toISOString(),
-    status: 'scheduled', // Status inicial correto
+    status: 'scheduled',
     notes: 'Agendamento via Sistema'
   } as const
 
@@ -52,27 +58,21 @@ export async function createAppointment(formData: FormData) {
 
   if (insertError) {
     console.error("Erro Banco:", insertError)
-
-    // === CORREÇÃO DO ERRO DE CONFLITO ===
     if (insertError.message.includes('conflicting key value') || insertError.code === '23P01') {
         return { error: "Horário indisponível! Já existe um agendamento neste intervalo." }
     }
-    
     return { error: `Erro ao salvar: ${insertError.message}` }
   }
 
-  // Disparo do WhatsApp (Com Logs)
+  // Disparo do WhatsApp
   if (appointment) {
-    console.log("📝 Agendamento criado. Iniciando envio de WhatsApp...")
+    console.log("📝 Agendamento criado com médico:", profile_id)
     try {
+      // Agora o envio vai encontrar o profile_id e puxar o full_name correto
       const zapResult = await sendAppointmentConfirmation(appointment.id)
-      if (zapResult?.error) {
-        console.error("⚠️ Falha no envio do WhatsApp:", zapResult.error)
-      } else {
-        console.log("✅ WhatsApp enviado com sucesso!")
-      }
+      if (zapResult?.error) console.error("⚠️ Erro Zap:", zapResult.error)
     } catch (err) {
-      console.error("❌ Erro crítico no envio do WhatsApp:", err)
+      console.error("❌ Erro crítico Zap:", err)
     }
   }
 
