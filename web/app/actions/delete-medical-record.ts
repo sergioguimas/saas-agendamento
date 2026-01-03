@@ -1,20 +1,23 @@
 'use server'
 
-import { createClient } from "@/utils/supabase/server"
-import { revalidatePath } from "next/cache"
+import { createClient } from '@/utils/supabase/server'
 
 export async function deleteMedicalRecord(recordId: string) {
   const supabase = await createClient()
 
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Não autorizado' }
+
   const { error } = await supabase
-    .from('medical_records')
+    .from('service_notes')
     .delete()
     .eq('id', recordId)
+    .eq('profile_id', user.id)
 
   if (error) {
-    return { error: "Erro ao excluir. Apenas rascunhos podem ser apagados." }
+    console.error('Erro ao excluir:', error)
+    return { error: 'Erro ao excluir anotação.' }
   }
 
-  revalidatePath('/clientes')
   return { success: true }
 }

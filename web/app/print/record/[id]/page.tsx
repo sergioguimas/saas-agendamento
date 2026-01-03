@@ -15,7 +15,7 @@ export default async function PrintRecordPage({
 
   // Buscando o prontuário com os novos nomes de coluna
   const { data: record } = await supabase
-    .from('medical_records')
+    .from('service_notes')
     .select(`
       *,
       customers (
@@ -24,7 +24,7 @@ export default async function PrintRecordPage({
         phone,
         gender
       ),
-      profiles!medical_records_staff_id_fkey (
+      profiles!service_notes_profile_id_fkey (
         name
       )
     `)
@@ -35,7 +35,6 @@ export default async function PrintRecordPage({
     return notFound()
   }
 
-  // Agora usamos staff_id e a relação correta com profiles
   // @ts-ignore
   const professionalName = record.profiles?.name || "Profissional Responsável"
 

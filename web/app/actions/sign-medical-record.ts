@@ -6,18 +6,21 @@ import { revalidatePath } from 'next/cache'
 export async function signMedicalRecord(recordId: string, customerId: string) {
   const supabase = await createClient()
 
-  // Atualiza para assinado e grava a data/hora atual
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Não autorizado' }
+
   const { error } = await supabase
-    .from('medical_records')
-    .update({ 
+    .from('service_notes') 
+    .update({
       status: 'signed',
       signed_at: new Date().toISOString()
-    })
+    }) 
     .eq('id', recordId)
-    .eq('status', 'draft') // Segurança extra: só assina se for rascunho
+    .eq('profile_id', user.id) // Garante que é o autor
 
   if (error) {
-    return { error: 'Erro ao assinar: O prontuário já foi finalizado ou você não tem permissão.' }
+    console.error('Erro ao assinar:', error)
+    return { error: 'Erro ao assinar prontuário. Verifique se você é o autor.' }
   }
 
   revalidatePath(`/clientes/${customerId}`)

@@ -1,23 +1,23 @@
 'use server'
 
-import { createClient } from "@/utils/supabase/server"
-import { revalidatePath } from "next/cache"
+import { createClient } from '@/utils/supabase/server'
 
 export async function updateMedicalRecord(recordId: string, content: string) {
   const supabase = await createClient()
 
-  // 1. Tenta atualizar (A RLS do banco garante que só edita se for draft)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Não autorizado' }
+
   const { error } = await supabase
-    .from('medical_records')
-    .update({ content })
+    .from('service_notes')
+    .update({ content }) // O tipo 'content' é validado aqui
     .eq('id', recordId)
-    // Opcional: Adicionar .eq('status', 'draft') aqui redundante para performance, 
-    // mas a RLS é a autoridade final.
+    .eq('profile_id', user.id)
 
   if (error) {
-    return { error: "Erro ao atualizar. Verifique se o prontuário já foi assinado." }
+    console.error('Erro ao atualizar:', error)
+    return { error: 'Erro ao salvar alterações.' }
   }
 
-  revalidatePath('/clientes')
   return { success: true }
 }

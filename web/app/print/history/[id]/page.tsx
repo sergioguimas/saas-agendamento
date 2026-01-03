@@ -25,7 +25,7 @@ export default function PrintHistoryPage({
           organizations (
             name
           ),
-          medical_records (
+          service_notes (
             id,
             content,
             created_at,
@@ -68,8 +68,8 @@ export default function PrintHistoryPage({
       {/* Lista de Registros */}
       <div className="space-y-8">
         <h2 className="text-lg font-semibold border-b pb-2">Registros de Prontuário</h2>
-        {data.medical_records?.length > 0 ? (
-          data.medical_records.map((record: any) => (
+        {data.service_notes?.length > 0 ? (
+          data.service_notes.map((record: any) => (
             <div key={record.id} className="border-l-4 border-zinc-300 pl-4 py-2">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-xs font-bold text-zinc-500 uppercase">

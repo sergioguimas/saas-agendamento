@@ -13,22 +13,21 @@ export async function createMedicalRecord(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Não autorizado' }
 
-  // 2. Buscar Perfil (Mudança aqui: organization_id)
+  // 2. Buscar Organização
   const { data: profile } = await supabase
     .from('profiles')
     .select('organization_id') 
     .eq('id', user.id)
     .single()
 
-  // CORREÇÃO: Usar organization_id
   if (!profile?.organization_id) return { error: 'Perfil inválido ou sem organização' }
 
-  // 3. Salvar (Mudança aqui: organization_id e staff_id)
-  const { error } = await supabase.from('medical_records').insert({
+  // 3. Salvar na nova tabela service_notes
+  const { error } = await supabase.from('service_notes').insert({
     customer_id: customerId,
     content,
-    organization_id: profile.organization_id, // <--- Aqui
-    staff_id: user.id, // <--- O prontuário pertence a quem criou
+    organization_id: profile.organization_id,
+    profile_id: user.id,
     status: 'completed'
   })
 

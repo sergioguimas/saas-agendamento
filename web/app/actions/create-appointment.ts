@@ -12,7 +12,7 @@ type LocalAppointmentInsert = {
   patient_id: string
   organizations_id: string
   service_id: string
-  staff_id: string
+  profile_id: string
   start_time: string
   end_time: string
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show'
@@ -24,7 +24,7 @@ export async function createAppointment(formData: FormData) {
 
   const customer_id = formData.get('customer_id') as string
   const service_id = formData.get('service_id') as string
-  const staff_id = formData.get('staff_id') as string
+  const profile_id = formData.get('profile_id') as string
   const start_time_raw = formData.get('start_time') as string 
   const organizations_id = formData.get('organizations_id') as string 
 
@@ -50,7 +50,7 @@ export async function createAppointment(formData: FormData) {
     patient_id: customer_id,
     organizations_id: organizations_id,
     service_id: service_id,
-    staff_id: staff_id,
+    profile_id: profile_id,
     start_time: start_date.toISOString(),
     end_time: end_date.toISOString(),
     status: 'pending',
