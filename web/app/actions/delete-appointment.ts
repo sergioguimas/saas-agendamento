@@ -13,10 +13,10 @@ export async function cancelAppointment(appointmentId: string) {
     .from('appointments')
     .select(`
       *,
-      services ( name )
+      services ( title )
     `)
     .eq('id', appointmentId)
-    .single()
+    .single() as any // 'as any' ajuda aqui pois o join retorna array/objeto complexo
 
   if (!appointment) return { error: "Agendamento não encontrado" }
 
@@ -29,19 +29,19 @@ export async function cancelAppointment(appointmentId: string) {
   if (error) return { error: 'Erro ao cancelar agendamento' }
 
   // 3. Enviar WhatsApp de Cancelamento 🚀
-  // Buscamos o cliente manualmente para garantir, caso o join falhe
-  if (appointment.client_id) {
+  if (appointment.customer_id) {
     const { data: client } = await supabase
       .from('customers')
       .select('name, phone')
-      .eq('id', appointment.client_id)
+      .eq('id', appointment.customer_id)
       .single()
 
     if (client?.phone) {
         try {
-            // @ts-ignore
-            const nomeServico = appointment.services?.name || "atendimento"
+            const nomeServico = appointment.services?.title || "atendimento"
             const dataOriginal = new Date(appointment.start_time)
+            
+            // Formatação de data/hora para o Brasil
             const dia = dataOriginal.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
             const hora = dataOriginal.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' })
 
@@ -69,10 +69,10 @@ export async function deleteAppointment(appointmentId: string) {
     .from('appointments')
     .select(`
       *,
-      services ( name )
+      services ( title )
     `)
     .eq('id', appointmentId)
-    .single()
+    .single() as any
 
   // 2. Deletar o agendamento
   const { error } = await supabase
@@ -83,17 +83,16 @@ export async function deleteAppointment(appointmentId: string) {
   if (error) return { error: 'Erro ao excluir agendamento' }
 
   // 3. Enviar WhatsApp (Opcional na exclusão, mas bom para garantir) 🚀
-  if (appointment?.client_id) {
+  if (appointment?.customer_id) {
     const { data: client } = await supabase
       .from('customers')
       .select('name, phone')
-      .eq('id', appointment.client_id)
+      .eq('id', appointment.customer_id)
       .single()
 
     if (client?.phone) {
         try {
-            // @ts-ignore
-            const nomeServico = appointment.services?.name || "atendimento"
+            const nomeServico = appointment.services?.title || "atendimento"
             const dataOriginal = new Date(appointment.start_time)
             const dia = dataOriginal.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
             
