@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -19,15 +19,61 @@ interface SettingsFormProps {
 
 export function SettingsForm({ profile, whatsappStatus }: SettingsFormProps) {
   const [loading, setLoading] = useState(false)
-  const organization = profile?.organizations
-  console.log("DEBUG ORG:", organization)
+  
+  // Estado inicial unificado para não perder dados ao trocar de aba
+  const [formData, setFormData] = useState({
+    name: '',
+    document: '',
+    phone: '',
+    email: '',
+    address: '',
+    full_name: '',
+    crm: '',
+    evolution_url: 'http://localhost:8082',
+    evolution_apikey: 'medagenda123'
+  })
+
+  // Carrega os dados existentes quando o componente monta
+  useEffect(() => {
+    const org = profile?.organizations
+    if (org || profile) {
+      setFormData({
+        name: org?.name || '',
+        document: org?.document || '',
+        phone: org?.phone || '',
+        email: org?.email || '',
+        address: org?.address || '',
+        full_name: profile?.full_name || '', // Nome do médico vem do profile
+        crm: org?.crm || '', // CRM pode estar na organização ou metadata
+        evolution_url: org?.evolution_api_url || org?.evolution_url || 'http://localhost:8082',
+        evolution_apikey: org?.evolution_api_key || org?.evolution_apikey || 'medagenda123'
+      })
+    }
+  }, [profile])
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    setFormData(prev => ({ ...prev, [name]: value }))
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setLoading(true)
     
-    const formData = new FormData(event.currentTarget)
-    const result = await updateSettings(formData)
+    // Constrói o FormData manualmente a partir do Estado (State)
+    // Isso garante que mesmo campos de abas ocultas sejam enviados
+    const dataToSend = new FormData()
+    
+    // IDs obrigatórios
+    dataToSend.append('user_id', profile?.id)
+    dataToSend.append('org_id', profile?.organization_id || '') // Corrigido para singular
+    
+    // Campos do formulário
+    Object.entries(formData).forEach(([key, value]) => {
+      dataToSend.append(key, value)
+    })
+
+    const result = await updateSettings(dataToSend)
 
     setLoading(false)
 
@@ -40,11 +86,6 @@ export function SettingsForm({ profile, whatsappStatus }: SettingsFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* CAMPOS OCULTOS DE SEGURANÇA: Garantem o envio de dados obrigatórios */}
-      <input type="hidden" name="user_id" value={profile?.id} />
-      <input type="hidden" name="org_id" value={profile?.organizations_id || ''} />
-      <input type="hidden" name="name" value={organization?.name || ''} />
-
       <Tabs defaultValue="organizacao" className="w-full">
         <TabsList className="grid w-full grid-cols-3 bg-zinc-900 border border-zinc-800">
           <TabsTrigger value="organizacao" className="gap-2 text-zinc-400 data-[state=active]:text-zinc-100">
@@ -73,7 +114,8 @@ export function SettingsForm({ profile, whatsappStatus }: SettingsFormProps) {
                 <Input 
                   id="name" 
                   name="name" 
-                  defaultValue={organization?.name || ''} 
+                  value={formData.name}
+                  onChange={handleChange}
                   className="bg-zinc-950 border-zinc-800 text-zinc-100"
                   required
                 />
@@ -84,7 +126,8 @@ export function SettingsForm({ profile, whatsappStatus }: SettingsFormProps) {
                   <Input 
                     id="document" 
                     name="document" 
-                    defaultValue={organization?.document || ''} 
+                    value={formData.document}
+                    onChange={handleChange}
                     className="bg-zinc-950 border-zinc-800 text-zinc-100" 
                   />
                 </div>
@@ -93,7 +136,8 @@ export function SettingsForm({ profile, whatsappStatus }: SettingsFormProps) {
                   <Input 
                     id="phone" 
                     name="phone" 
-                    defaultValue={organization?.phone || ''} 
+                    value={formData.phone}
+                    onChange={handleChange}
                     className="bg-zinc-950 border-zinc-800 text-zinc-100" 
                   />
                 </div>
@@ -104,7 +148,8 @@ export function SettingsForm({ profile, whatsappStatus }: SettingsFormProps) {
                   id="email" 
                   name="email" 
                   type="email" 
-                  defaultValue={organization?.email || ''} 
+                  value={formData.email}
+                  onChange={handleChange}
                   className="bg-zinc-950 border-zinc-800 text-zinc-100" 
                 />
               </div>
@@ -113,7 +158,8 @@ export function SettingsForm({ profile, whatsappStatus }: SettingsFormProps) {
                 <Textarea 
                   id="address" 
                   name="address" 
-                  defaultValue={organization?.address || ''} 
+                  value={formData.address}
+                  onChange={handleChange}
                   className="bg-zinc-950 border-zinc-800 text-zinc-100 min-h-[80px]" 
                 />
               </div>
@@ -134,14 +180,21 @@ export function SettingsForm({ profile, whatsappStatus }: SettingsFormProps) {
                 <Input 
                   id="full_name" 
                   name="full_name" 
-                  defaultValue={profile?.full_name || ''} 
+                  value={formData.full_name}
+                  onChange={handleChange}
                   className="bg-zinc-950 border-zinc-800 text-zinc-100"
                   required
                 />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="crm" className="text-zinc-300">Registro Profissional (CRM/CRP)</Label>
-                <Input id="crm" name="crm" defaultValue={organization?.crm || ''} className="bg-zinc-950 border-zinc-800" />
+                <Input 
+                  id="crm" 
+                  name="crm" 
+                  value={formData.crm}
+                  onChange={handleChange}
+                  className="bg-zinc-950 border-zinc-800 text-zinc-100" 
+                />
               </div>
             </CardContent>
           </Card>
@@ -161,7 +214,8 @@ export function SettingsForm({ profile, whatsappStatus }: SettingsFormProps) {
                 <Input 
                   id="evolution_url" 
                   name="evolution_url" 
-                  defaultValue={organization?.evolution_url || 'http://localhost:8082'} 
+                  value={formData.evolution_url}
+                  onChange={handleChange}
                   className="bg-zinc-950 border-zinc-800 font-mono text-xs text-blue-400"
                 />
               </div>
@@ -171,7 +225,8 @@ export function SettingsForm({ profile, whatsappStatus }: SettingsFormProps) {
                   id="evolution_apikey" 
                   name="evolution_apikey" 
                   type="password"
-                  defaultValue={organization?.evolution_apikey || 'medagenda123'} 
+                  value={formData.evolution_apikey}
+                  onChange={handleChange}
                   className="bg-zinc-950 border-zinc-800 font-mono text-xs"
                 />
               </div>

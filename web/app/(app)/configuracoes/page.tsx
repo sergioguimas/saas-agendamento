@@ -5,27 +5,26 @@ import { SettingsForm } from "./settings-form"
 export default async function SettingsPage() {
   const supabase = await createClient()
 
-  // 1. Verificar se o usuário está autenticado
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
     redirect("/login")
   }
 
-  // 2. Buscar perfil completo com os dados da organização vinculada
+  // CORREÇÃO: organization_id (singular)
   const { data: profile } = await supabase
     .from('profiles')
     .select(`
       *,
-      organizations:organizations_id (*)
+      organizations:organization_id (*)
     `)
     .eq('id', user.id)
     .single() as any
 
-  // 3. Buscar o status atual da instância de WhatsApp no banco
+  // CORREÇÃO: organization_id (singular)
   const { data: whatsapp } = await supabase
     .from('whatsapp_instances')
     .select('status')
-    .eq('organization_id', profile?.organizations_id)
+    .eq('organization_id', profile?.organization_id)
     .single() as any
 
   return (

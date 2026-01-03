@@ -5,22 +5,21 @@ import { SettingsForm } from '../configuracoes/settings-form'
 export default async function SetupPage() {
   const supabase = await createClient()
   
-  // 1. Busca o usuário para garantir que está logado
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // 2. Busca o perfil para passar ao formulário
+  // CORREÇÃO: organization_id (singular)
   const { data: profile } = await supabase
     .from('profiles')
     .select(`
       *,
-      organizations:organizations_id (*)
+      organizations:organization_id (*) 
     `)
     .eq('id', user.id)
     .single() as any
 
-  // 3. Se o usuário já tiver organização, pula o setup
-  if (profile?.organizations_id) {
+  // Se já tiver organização, vai pro dashboard
+  if (profile?.organization_id) {
     redirect('/dashboard')
   }
 
@@ -33,7 +32,6 @@ export default async function SetupPage() {
         </p>
       </div>
       
-      {/* CORREÇÃO: Passando o profile obrigatório */}
       <SettingsForm profile={profile} />
     </div>
   )
