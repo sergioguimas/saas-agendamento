@@ -11,17 +11,16 @@ export async function sendWhatsappMessage(phone: string, message: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "Usuário não autenticado" }
 
-  // CORREÇÃO: organization_id singular
   const { data: profile } = await supabase
     .from('profiles')
-    .select('organization_id, organizations:organization_id(slug, evolution_url, evolution_api_key)')
+    .select('organization_id, organizations:organization_id(slug, evolution_api_url, evolution_api_key)')
     .eq('id', user.id)
     .single() as any
 
   if (!profile?.organizations?.slug) return { error: "Organização sem instância." }
   
   const instanceName = profile.organizations.slug
-  const EVOLUTION_URL = profile.organizations.evolution_url || DEFAULT_EVOLUTION_URL
+  const EVOLUTION_URL = profile.organizations.evolution_api_url || DEFAULT_EVOLUTION_URL
   const API_KEY = profile.organizations.evolution_api_key || GLOBAL_API_KEY
 
   const cleanPhone = phone.replace(/\D/g, "")

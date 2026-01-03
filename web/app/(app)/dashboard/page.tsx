@@ -21,7 +21,6 @@ export default async function DashboardPage() {
   if (!user) return redirect('/login')
 
   // 2. Busca Perfil e Organização
-  // CORREÇÃO: organization_id (singular)
   const { data: profile } = await supabase
     .from('profiles')
     .select(`
@@ -31,7 +30,6 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .single() as any
 
-  // CORREÇÃO: organization_id (singular)
   if (!profile?.organization_id) redirect('/configuracoes')
 
   // 3. Definição do período de "Hoje" para o filtro UTC
@@ -45,13 +43,13 @@ export default async function DashboardPage() {
     supabase
       .from('services')
       .select('*', { count: 'exact', head: true })
-      .eq('organization_id', profile.organization_id) // CORREÇÃO: singular
-      .eq('is_active', true), // CORREÇÃO: active -> is_active
+      .eq('organization_id', profile.organization_id)
+      .eq('is_active', true),
     
     supabase
       .from('customers')
       .select('*', { count: 'exact', head: true })
-      .eq('organization_id', profile.organization_id) // CORREÇÃO: singular
+      .eq('organization_id', profile.organization_id)
       .eq('active', true), // Essa coluna criamos na migração recente
 
     supabase
@@ -63,8 +61,7 @@ export default async function DashboardPage() {
         customers(name), 
         services(title, color)
       `)
-      // CORREÇÕES ACIMA: customers(name) e services(title)
-      .eq('organization_id', profile.organization_id) // CORREÇÃO: singular
+      .eq('organization_id', profile.organization_id)
       .gte('start_time', todayStart.toISOString())
       .lte('start_time', todayEnd.toISOString())
       .order('start_time', { ascending: true }),
@@ -72,7 +69,7 @@ export default async function DashboardPage() {
     supabase
       .from('appointments')
       .select('status')
-      .eq('organization_id', profile.organization_id) // CORREÇÃO: singular
+      .eq('organization_id', profile.organization_id)
   ]) as any
 
   // Cálculos de indicadores
@@ -83,7 +80,6 @@ export default async function DashboardPage() {
 
   return (
     <div className="p-8 space-y-8 bg-black min-h-screen text-zinc-100">
-      {/* Cabeçalho Otimizado: Nome + Empresa + Cargo */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-zinc-800 pb-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Visão Geral</h1>

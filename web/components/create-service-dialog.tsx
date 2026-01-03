@@ -56,13 +56,11 @@ export function CreateServiceDialog({ organization_id, serviceToEdit }: { organi
           )}
           <div>
             <Label>Nome</Label>
-            {/* CORREÇÃO: defaultValue usa serviceToEdit.title */}
             <Input name="name" defaultValue={serviceToEdit?.title || serviceToEdit?.name} required className="bg-zinc-950 border-zinc-800" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Duração (min)</Label>
-              {/* CORREÇÃO: defaultValue usa duration_minutes */}
               <Input name="duration" type="number" defaultValue={serviceToEdit?.duration_minutes} className="bg-zinc-950 border-zinc-800" />
             </div>
             <div><Label>Preço (R$)</Label><Input name="price" type="number" step="0.01" defaultValue={serviceToEdit?.price} className="bg-zinc-950 border-zinc-800" /></div>
