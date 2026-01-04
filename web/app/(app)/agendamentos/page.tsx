@@ -27,7 +27,7 @@ export default async function AgendamentosPage() {
 
   const orgId = profile.organization_id
 
-  // 3. Busca em paralelo (Otimizado e Sem Gambiarra de Mapeamento)
+  // 3. Busca em paralelo
   const [customersRes, servicesRes, staffRes, appointmentsRes] = await Promise.all([
     // Clientes
     supabase
@@ -37,7 +37,7 @@ export default async function AgendamentosPage() {
       .eq('active', true) 
       .order('name'),
 
-    // Serviços (Agora buscamos 'title' e 'color' nativos)
+    // Serviços
     supabase
       .from('services')
       .select('id, title, color') 
@@ -50,7 +50,7 @@ export default async function AgendamentosPage() {
       .select('id, full_name')
       .eq('organization_id', orgId),
 
-    // Agendamentos (Join correto)
+    // Agendamentos
     supabase
       .from('appointments')
       .select(`
