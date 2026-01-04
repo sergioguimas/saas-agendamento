@@ -73,7 +73,7 @@ Confirme sua presença abaixo 👇`
       })
     })
 
-    // Pequeno delay para garantir a ordem (opcional, mas bom)
+    // Pequeno delay para garantir a ordem
     await new Promise(r => setTimeout(r, 500))
 
     // PASSO B: Envia a Enquete (Botões Interativos)
@@ -95,7 +95,6 @@ Confirme sua presença abaixo 👇`
 
     if (!pollResponse.ok) {
       console.error("❌ Erro Enquete:", data)
-      // Não retornamos erro aqui para não falhar o processo se só a enquete der ruim
     }
 
     return { success: true, data }

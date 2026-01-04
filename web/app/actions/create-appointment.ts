@@ -2,7 +2,6 @@
 
 import { createClient } from "@/utils/supabase/server"
 import { revalidatePath } from "next/cache"
-// IMPORTANTE: Adicione este import. Confirme se o nome da função é este mesmo no seu arquivo.
 import { sendAppointmentConfirmation } from "./whatsapp-messages"
 
 export async function createAppointment(formData: FormData) {
@@ -35,7 +34,7 @@ export async function createAppointment(formData: FormData) {
     .from('appointments')
     .select('id')
     .eq('organization_id', organization_id)
-    .neq('status', 'canceled') // <--- Ignora cancelados na verificação
+    .neq('status', 'canceled')
     .lt('start_time', endTime.toISOString())
     .gt('end_time', startTime.toISOString())
 
@@ -67,7 +66,7 @@ export async function createAppointment(formData: FormData) {
       price: service.price,
       status: 'scheduled'
     })
-    .select() // <--- CRUCIAL: Precisamos disso para pegar o ID gerado
+    .select()
     .single()
 
   if (error || !newAppointment) {
@@ -76,7 +75,6 @@ export async function createAppointment(formData: FormData) {
   }
 
   // 4. Enviar WhatsApp
-  // Usamos o ID que acabamos de recuperar no passo 3
   if (newAppointment?.id) {
     sendAppointmentConfirmation(newAppointment.id).catch(err => 
       console.error("Falha ao enviar confirmação de agendamento:", err)
