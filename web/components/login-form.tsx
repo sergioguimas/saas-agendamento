@@ -45,7 +45,7 @@ export function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-md border-border bg-card text-card-foreground">
+    <Card className="w-full max-w-md border border-border bg-card text-card-foreground shadow-lg">
       <CardHeader>
         <CardTitle className="text-2xl text-primary">
           {isLogin ? 'Acessar Clínica' : 'Cadastrar Consultório'}

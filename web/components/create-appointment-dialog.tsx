@@ -57,9 +57,8 @@ export function CreateAppointmentDialog({ customers, services, staff, organizati
           <CalendarPlus className="mr-2 h-4 w-4" /> Novo Agendamento
         </Button>
       </DialogTrigger>
-      
-      {/* CORREÇÃO: Cores do Tema */}
-      <DialogContent className="bg-background border-border text-foreground sm:max-w-[425px]">
+
+      <DialogContent className="bg-card border border-border text-card-foreground shadow-xl sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Novo Agendamento</DialogTitle>
         </DialogHeader>
@@ -68,7 +67,6 @@ export function CreateAppointmentDialog({ customers, services, staff, organizati
           <div className="space-y-2">
             <Label>Paciente</Label>
             <Select name="customer_id" required>
-              {/* CORREÇÃO: Inputs usando bg-background e border-input */}
               <SelectTrigger className="bg-background border-input">
                 <SelectValue placeholder="Selecione o paciente" />
               </SelectTrigger>
