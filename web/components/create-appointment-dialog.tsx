@@ -1,126 +1,83 @@
-'use client'
+'use server'
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { CalendarPlus, Loader2 } from "lucide-react"
-import { createAppointment } from "@/app/actions/create-appointment"
-import { toast } from "sonner"
+import { createClient } from "@/utils/supabase/server"
+import { revalidatePath } from "next/cache"
 
-type Props = {
-  customers: { id: string; name: string }[]
-  services: { id: string; title: string }[] 
-  staff: { id: string; full_name: string }[]
-  organization_id: string
-}
+export async function createAppointment(formData: FormData) {
+  const supabase = await createClient()
 
-export function CreateAppointmentDialog({ customers, services, staff, organization_id }: Props) {
-  const [open, setOpen] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const organization_id = formData.get('organization_id') as string
+  const customer_id = formData.get('customer_id') as string
+  const service_id = formData.get('service_id') as string
+  const start_time_raw = formData.get('start_time') as string
+  const staff_id = formData.get('staff_id') as string | null
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setLoading(true)
-    const formData = new FormData(event.currentTarget)
-    formData.append('organization_id', organization_id)
-
-    const result = await createAppointment(formData)
-
-    if (result.error) {
-      toast.error(result.error)
-    } else {
-      toast.success("Agendamento criado!")
-      setOpen(false)
-    }
-    setLoading(false)
+  if (!organization_id || !customer_id || !service_id || !start_time_raw) {
+    return { error: "Dados incompletos" }
   }
 
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
-          <CalendarPlus className="mr-2 h-4 w-4" /> Novo Agendamento
-        </Button>
-      </DialogTrigger>
+  // 1. Calcular horário de fim baseado na duração do serviço
+  const { data: service } = await supabase
+    .from('services')
+    .select('duration_minutes, price')
+    .eq('id', service_id)
+    .single()
 
-      <DialogContent className="bg-card border border-border text-card-foreground shadow-xl sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Novo Agendamento</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-          
-          <div className="space-y-2">
-            <Label>Paciente</Label>
-            <Select name="customer_id" required>
-              <SelectTrigger className="bg-background border-input">
-                <SelectValue placeholder="Selecione o paciente" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border-border text-popover-foreground">
-                {customers.map(c => (
-                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+  if (!service) return { error: "Serviço não encontrado" }
 
-          <div className="space-y-2">
-            <Label>Profissional</Label>
-            <Select name="staff_id">
-              <SelectTrigger className="bg-background border-input">
-                <SelectValue placeholder="Selecione o médico (Opcional)" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border-border text-popover-foreground">
-                {staff?.map(s => (
-                  <SelectItem key={s.id} value={s.id}>{s.full_name || 'Sem nome'}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+  const startTime = new Date(start_time_raw)
+  const endTime = new Date(startTime.getTime() + service.duration_minutes * 60000)
 
-          <div className="space-y-2">
-            <Label>Procedimento</Label>
-            <Select name="service_id" required>
-              <SelectTrigger className="bg-background border-input">
-                <SelectValue placeholder="Selecione o procedimento" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border-border text-popover-foreground">
-                {services.map(s => (
-                  <SelectItem key={s.id} value={s.id}>{s.title}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+  // 2. VERIFICAÇÃO DE CONFLITO CORRIGIDA
+  // A lógica é: Existe algum agendamento que comece ANTES do meu fim E termine DEPOIS do meu início?
+  // E IMPORTANTE: Que NÃO esteja cancelado.
+  const query = supabase
+    .from('appointments')
+    .select('id')
+    .eq('organization_id', organization_id)
+    .neq('status', 'canceled')
+    .lt('start_time', endTime.toISOString())
+    .gt('end_time', startTime.toISOString())
 
-          <div className="space-y-2">
-            <Label>Data e Hora</Label>
-            <Input 
-              name="start_time" 
-              type="datetime-local" 
-              required 
-              className="bg-background border-input block" 
-            />
-          </div>
+  // Se tiver um staff selecionado, verifica conflito só pra ele. 
+  // Se não tiver (clínica geral), verifica conflito de sala/geral (depende da regra de negócio).
+  // Assumindo que se tiver staff, o conflito é na agenda dele:
+  if (staff_id) {
+    query.eq('profile_id', staff_id)
+  }
 
-          <Button type="submit" disabled={loading} className="w-full">
-            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Confirmar Agendamento'}
-          </Button>
-        </form>
-      </DialogContent>
-    </Dialog>
-  )
+  const { data: conflicts, error: conflictError } = await query
+
+  if (conflictError) {
+    console.error(conflictError)
+    return { error: "Erro ao verificar disponibilidade" }
+  }
+
+  if (conflicts && conflicts.length > 0) {
+    return { error: "Já existe um agendamento neste horário (conflito)." }
+  }
+
+  // 3. Criar o agendamento
+  const { error } = await supabase
+    .from('appointments')
+    .insert({
+      organization_id,
+      customer_id,
+      service_id,
+      profile_id: staff_id || null, // Salva o médico se foi selecionado
+      start_time: startTime.toISOString(),
+      end_time: endTime.toISOString(),
+      price: service.price,
+      status: 'scheduled'
+    })
+
+  if (error) {
+    console.error(error)
+    return { error: "Erro ao criar agendamento" }
+  }
+
+  revalidatePath('/agendamentos')
+  revalidatePath('/dashboard')
+  
+  return { success: true }
 }
