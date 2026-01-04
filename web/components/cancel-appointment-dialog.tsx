@@ -56,7 +56,7 @@ export function CancelAppointmentDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
+      <AlertDialogContent className="bg-background border-border text-foreground">
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-yellow-500" />
@@ -67,7 +67,7 @@ export function CancelAppointmentDialog({
               Você está removendo um agendamento. Escolha a opção adequada:
             </p>
             
-            <div className="bg-zinc-950 p-3 rounded border border-zinc-800 text-sm">
+            <div className="bg-zinc-950 p-3 rounded border border-border text-sm">
               <strong className="text-zinc-200 block mb-1">Cancelar Atendimento:</strong>
               O paciente avisou que não vem. O registro é mantido no histórico como "Cancelado".
             </div>

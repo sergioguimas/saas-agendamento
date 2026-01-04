@@ -128,7 +128,7 @@ export function MedicalRecordList({ records, customerId }: { records: any[], cus
 
   if (!records?.length) {
     return (
-      <div className="text-center py-8 border border-zinc-800 border-dashed rounded-lg">
+      <div className="text-center py-8 border border-border border-dashed rounded-lg">
         <p className="text-zinc-500 text-sm">Nenhuma anotação registrada.</p>
       </div>
     )
@@ -141,10 +141,10 @@ export function MedicalRecordList({ records, customerId }: { records: any[], cus
         const isSigned = record.status === 'signed'
 
         return (
-          <Card key={record.id} className={`bg-zinc-900 border-zinc-800 ${isSigned ? 'border-l-emerald-500 border-l-4' : 'border-l-yellow-500 border-l-4'}`}>
+          <Card key={record.id} className={`bg-background border-border ${isSigned ? 'border-l-emerald-500 border-l-4' : 'border-l-yellow-500 border-l-4'}`}>
             
             {/* HEADER */}
-            <CardHeader className="py-3 px-4 border-b border-zinc-800/50 bg-zinc-950/30">
+            <CardHeader className="py-3 px-4 border-b border-border/50 bg-zinc-950/30">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Avatar className="h-6 w-6">

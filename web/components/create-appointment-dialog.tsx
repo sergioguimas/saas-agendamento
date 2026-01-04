@@ -22,11 +22,10 @@ import { CalendarPlus, Loader2 } from "lucide-react"
 import { createAppointment } from "@/app/actions/create-appointment"
 import { toast } from "sonner"
 
-// DEFINIÇÃO DE TIPOS CORRIGIDA
 type Props = {
   customers: { id: string; name: string }[]
   services: { id: string; title: string }[] 
-  staff: { id: string; full_name: string }[] // Recebe staff
+  staff: { id: string; full_name: string }[]
   organization_id: string
 }
 
@@ -54,11 +53,13 @@ export function CreateAppointmentDialog({ customers, services, staff, organizati
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-blue-600 hover:bg-blue-700">
+        <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
           <CalendarPlus className="mr-2 h-4 w-4" /> Novo Agendamento
         </Button>
       </DialogTrigger>
-      <DialogContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
+      
+      {/* CORREÇÃO: Cores do Tema */}
+      <DialogContent className="bg-background border-border text-foreground sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Novo Agendamento</DialogTitle>
         </DialogHeader>
@@ -67,10 +68,11 @@ export function CreateAppointmentDialog({ customers, services, staff, organizati
           <div className="space-y-2">
             <Label>Paciente</Label>
             <Select name="customer_id" required>
-              <SelectTrigger className="bg-zinc-950 border-zinc-800">
+              {/* CORREÇÃO: Inputs usando bg-background e border-input */}
+              <SelectTrigger className="bg-background border-input">
                 <SelectValue placeholder="Selecione o paciente" />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-200">
+              <SelectContent className="bg-popover border-border text-popover-foreground">
                 {customers.map(c => (
                   <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                 ))}
@@ -81,10 +83,10 @@ export function CreateAppointmentDialog({ customers, services, staff, organizati
           <div className="space-y-2">
             <Label>Profissional</Label>
             <Select name="staff_id">
-              <SelectTrigger className="bg-zinc-950 border-zinc-800">
+              <SelectTrigger className="bg-background border-input">
                 <SelectValue placeholder="Selecione o médico (Opcional)" />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-200">
+              <SelectContent className="bg-popover border-border text-popover-foreground">
                 {staff?.map(s => (
                   <SelectItem key={s.id} value={s.id}>{s.full_name || 'Sem nome'}</SelectItem>
                 ))}
@@ -95,10 +97,10 @@ export function CreateAppointmentDialog({ customers, services, staff, organizati
           <div className="space-y-2">
             <Label>Procedimento</Label>
             <Select name="service_id" required>
-              <SelectTrigger className="bg-zinc-950 border-zinc-800">
+              <SelectTrigger className="bg-background border-input">
                 <SelectValue placeholder="Selecione o procedimento" />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-200">
+              <SelectContent className="bg-popover border-border text-popover-foreground">
                 {services.map(s => (
                   <SelectItem key={s.id} value={s.id}>{s.title}</SelectItem>
                 ))}
@@ -112,11 +114,11 @@ export function CreateAppointmentDialog({ customers, services, staff, organizati
               name="start_time" 
               type="datetime-local" 
               required 
-              className="bg-zinc-950 border-zinc-800 block" 
+              className="bg-background border-input block" 
             />
           </div>
 
-          <Button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700">
+          <Button type="submit" disabled={loading} className="w-full">
             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Confirmar Agendamento'}
           </Button>
         </form>

@@ -52,7 +52,7 @@ export function CreateCustomerDialog({ organization_id }: Props) {
           <UserPlus className="mr-2 h-4 w-4" /> Novo Paciente
         </Button>
       </DialogTrigger>
-      <DialogContent className="bg-zinc-900 border-zinc-800 text-zinc-100 sm:max-w-[425px]">
+      <DialogContent className="bg-background border-border text-foreground sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Cadastrar Paciente</DialogTitle>
           <DialogDescription className="text-zinc-400">
@@ -68,7 +68,7 @@ export function CreateCustomerDialog({ organization_id }: Props) {
               name="name" 
               placeholder="Ex: João da Silva" 
               required 
-              className="bg-zinc-950 border-zinc-800" 
+              className="bg-zinc-950 border-border" 
             />
           </div>
 
@@ -80,7 +80,7 @@ export function CreateCustomerDialog({ organization_id }: Props) {
                 id="phone" 
                 name="phone" 
                 placeholder="(11) 99999-9999" 
-                className="bg-zinc-950 border-zinc-800 pl-9" 
+                className="bg-zinc-950 border-border pl-9" 
               />
             </div>
           </div>
@@ -93,7 +93,7 @@ export function CreateCustomerDialog({ organization_id }: Props) {
                 id="document" 
                 name="document" 
                 placeholder="000.000.000-00" 
-                className="bg-zinc-950 border-zinc-800 pl-9" 
+                className="bg-zinc-950 border-border pl-9" 
               />
             </div>
           </div>

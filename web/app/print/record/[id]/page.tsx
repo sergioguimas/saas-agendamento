@@ -90,7 +90,7 @@ export default async function PrintRecordPage({
       <div className="mt-8 no-print flex justify-center">
         <button 
           onClick={() => window.print()}
-          className="bg-zinc-900 text-white px-6 py-2 rounded-lg hover:bg-zinc-800 transition-colors"
+          className="bg-background text-white px-6 py-2 rounded-lg hover:bg-zinc-800 transition-colors"
         >
           Imprimir Agora
         </button>

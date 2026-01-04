@@ -59,7 +59,7 @@ export function EditCustomerDialog({ open, onOpenChange, customer }: EditCustome
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-zinc-900 border-zinc-800 text-zinc-100 sm:max-w-[500px]">
+      <DialogContent className="bg-background border-border text-foreground sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Editar Paciente</DialogTitle>
         </DialogHeader>
@@ -72,7 +72,7 @@ export function EditCustomerDialog({ open, onOpenChange, customer }: EditCustome
               name="name" 
               defaultValue={customer.name}
               required 
-              className="bg-zinc-950 border-zinc-800 focus:ring-blue-600" 
+              className="bg-zinc-950 border-border focus:ring-blue-600" 
             />
           </div>
 
@@ -84,7 +84,7 @@ export function EditCustomerDialog({ open, onOpenChange, customer }: EditCustome
                 name="email" 
                 type="email" 
                 defaultValue={customer.email || ''}
-                className="bg-zinc-950 border-zinc-800 focus:ring-blue-600" 
+                className="bg-zinc-950 border-border focus:ring-blue-600" 
               />
             </div>
             <div className="grid gap-2">
@@ -93,7 +93,7 @@ export function EditCustomerDialog({ open, onOpenChange, customer }: EditCustome
                 id="edit-phone" 
                 name="phone" 
                 defaultValue={customer.phone || ''}
-                className="bg-zinc-950 border-zinc-800 focus:ring-blue-600" 
+                className="bg-zinc-950 border-border focus:ring-blue-600" 
               />
             </div>
           </div>
@@ -101,10 +101,10 @@ export function EditCustomerDialog({ open, onOpenChange, customer }: EditCustome
           <div className="grid gap-2">
             <Label htmlFor="edit-gender">Gênero</Label>
             <Select name="gender" defaultValue={customer.gender || undefined}>
-              <SelectTrigger className="bg-zinc-950 border-zinc-800">
+              <SelectTrigger className="bg-zinc-950 border-border">
                 <SelectValue placeholder="Selecione..." />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
+              <SelectContent className="bg-background border-border text-foreground">
                 <SelectItem value="masculino">Masculino</SelectItem>
                 <SelectItem value="feminino">Feminino</SelectItem>
                 <SelectItem value="outro">Outro</SelectItem>
@@ -118,7 +118,7 @@ export function EditCustomerDialog({ open, onOpenChange, customer }: EditCustome
               id="edit-notes" 
               name="notes" 
               defaultValue={customer.notes || ''}
-              className="bg-zinc-950 border-zinc-800 focus:ring-blue-600 resize-none h-20" 
+              className="bg-zinc-950 border-border focus:ring-blue-600 resize-none h-20" 
             />
           </div>
 

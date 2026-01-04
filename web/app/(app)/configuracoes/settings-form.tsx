@@ -87,23 +87,23 @@ export function SettingsForm({ profile, whatsappStatus }: SettingsFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <Tabs defaultValue="organizacao" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-zinc-900 border border-zinc-800">
-          <TabsTrigger value="organizacao" className="gap-2 text-zinc-400 data-[state=active]:text-zinc-100">
+        <TabsList className="grid w-full grid-cols-3 bg-background border border-border">
+          <TabsTrigger value="organizacao" className="gap-2 text-zinc-400 data-[state=active]:text-foreground">
             <Building2 className="h-4 w-4" /> Clínica
           </TabsTrigger>
-          <TabsTrigger value="profissional" className="gap-2 text-zinc-400 data-[state=active]:text-zinc-100">
+          <TabsTrigger value="profissional" className="gap-2 text-zinc-400 data-[state=active]:text-foreground">
             <User className="h-4 w-4" /> Profissional
           </TabsTrigger>
-          <TabsTrigger value="api" className="gap-2 text-zinc-400 data-[state=active]:text-zinc-100">
+          <TabsTrigger value="api" className="gap-2 text-zinc-400 data-[state=active]:text-foreground">
             <Share2 className="h-4 w-4" /> Integração
           </TabsTrigger>
         </TabsList>
 
         {/* ABA 1: DADOS DA CLÍNICA */}
         <TabsContent value="organizacao" className="space-y-4 mt-4">
-          <Card className="bg-zinc-900 border-zinc-800">
+          <Card className="bg-background border-border">
             <CardHeader>
-              <CardTitle className="text-zinc-100">Dados Institucionais</CardTitle>
+              <CardTitle className="text-foreground">Dados Institucionais</CardTitle>
               <CardDescription className="text-zinc-400">
                 Informações exibidas em documentos e cabeçalhos.
               </CardDescription>
@@ -116,7 +116,7 @@ export function SettingsForm({ profile, whatsappStatus }: SettingsFormProps) {
                   name="name" 
                   value={formData.name}
                   onChange={handleChange}
-                  className="bg-zinc-950 border-zinc-800 text-zinc-100"
+                  className="bg-zinc-950 border-border text-foreground"
                   required
                 />
               </div>
@@ -128,7 +128,7 @@ export function SettingsForm({ profile, whatsappStatus }: SettingsFormProps) {
                     name="document" 
                     value={formData.document}
                     onChange={handleChange}
-                    className="bg-zinc-950 border-zinc-800 text-zinc-100" 
+                    className="bg-zinc-950 border-border text-foreground" 
                   />
                 </div>
                 <div className="grid gap-2">
@@ -138,7 +138,7 @@ export function SettingsForm({ profile, whatsappStatus }: SettingsFormProps) {
                     name="phone" 
                     value={formData.phone}
                     onChange={handleChange}
-                    className="bg-zinc-950 border-zinc-800 text-zinc-100" 
+                    className="bg-zinc-950 border-border text-foreground" 
                   />
                 </div>
               </div>
@@ -150,7 +150,7 @@ export function SettingsForm({ profile, whatsappStatus }: SettingsFormProps) {
                   type="email" 
                   value={formData.email}
                   onChange={handleChange}
-                  className="bg-zinc-950 border-zinc-800 text-zinc-100" 
+                  className="bg-zinc-950 border-border text-foreground" 
                 />
               </div>
               <div className="grid gap-2">
@@ -160,7 +160,7 @@ export function SettingsForm({ profile, whatsappStatus }: SettingsFormProps) {
                   name="address" 
                   value={formData.address}
                   onChange={handleChange}
-                  className="bg-zinc-950 border-zinc-800 text-zinc-100 min-h-[80px]" 
+                  className="bg-zinc-950 border-border text-foreground min-h-[80px]" 
                 />
               </div>
             </CardContent>
@@ -169,9 +169,9 @@ export function SettingsForm({ profile, whatsappStatus }: SettingsFormProps) {
 
         {/* ABA 2: DADOS DO PROFISSIONAL */}
         <TabsContent value="profissional" className="space-y-4 mt-4">
-          <Card className="bg-zinc-900 border-zinc-800">
+          <Card className="bg-background border-border">
             <CardHeader>
-              <CardTitle className="text-zinc-100">Configurações do Médico</CardTitle>
+              <CardTitle className="text-foreground">Configurações do Médico</CardTitle>
               <CardDescription className="text-zinc-400">Como você aparecerá nas mensagens para os pacientes.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -182,7 +182,7 @@ export function SettingsForm({ profile, whatsappStatus }: SettingsFormProps) {
                   name="full_name" 
                   value={formData.full_name}
                   onChange={handleChange}
-                  className="bg-zinc-950 border-zinc-800 text-zinc-100"
+                  className="bg-zinc-950 border-border text-foreground"
                   required
                 />
               </div>
@@ -193,7 +193,7 @@ export function SettingsForm({ profile, whatsappStatus }: SettingsFormProps) {
                   name="crm" 
                   value={formData.crm}
                   onChange={handleChange}
-                  className="bg-zinc-950 border-zinc-800 text-zinc-100" 
+                  className="bg-zinc-950 border-border text-foreground" 
                 />
               </div>
             </CardContent>
@@ -204,9 +204,9 @@ export function SettingsForm({ profile, whatsappStatus }: SettingsFormProps) {
         <TabsContent value="api" className="space-y-4 mt-4">
           <WhatsappSettings initialStatus={whatsappStatus} />
 
-          <Card className="bg-zinc-900 border-zinc-800">
+          <Card className="bg-background border-border">
             <CardHeader>
-              <CardTitle className="text-zinc-100 text-sm">Parâmetros Técnicos</CardTitle>
+              <CardTitle className="text-foreground text-sm">Parâmetros Técnicos</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-2">
@@ -216,7 +216,7 @@ export function SettingsForm({ profile, whatsappStatus }: SettingsFormProps) {
                   name="evolution_url" 
                   value={formData.evolution_url}
                   onChange={handleChange}
-                  className="bg-zinc-950 border-zinc-800 font-mono text-xs text-blue-400"
+                  className="bg-zinc-950 border-border font-mono text-xs text-blue-400"
                 />
               </div>
               <div className="grid gap-2">
@@ -227,7 +227,7 @@ export function SettingsForm({ profile, whatsappStatus }: SettingsFormProps) {
                   type="password"
                   value={formData.evolution_apikey}
                   onChange={handleChange}
-                  className="bg-zinc-950 border-zinc-800 font-mono text-xs"
+                  className="bg-zinc-950 border-border font-mono text-xs"
                 />
               </div>
             </CardContent>

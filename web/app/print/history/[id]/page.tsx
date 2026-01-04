@@ -91,7 +91,7 @@ export default function PrintHistoryPage({
       <div className="mt-12 flex justify-center no-print">
         <button 
           onClick={() => window.print()}
-          className="bg-zinc-900 text-white px-8 py-2 rounded-lg font-medium hover:bg-zinc-800 transition-all"
+          className="bg-background text-white px-8 py-2 rounded-lg font-medium hover:bg-zinc-800 transition-all"
         >
           Imprimir Histórico
         </button>

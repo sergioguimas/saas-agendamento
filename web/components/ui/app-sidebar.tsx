@@ -29,8 +29,8 @@ export function AppSidebar() {
   }
 
   return (
-    <div className="flex h-full flex-col border-r bg-zinc-950 text-zinc-100 w-64">
-      <div className="p-6 border-b border-zinc-800">
+    <div className="flex h-full flex-col border-r bg-zinc-950 text-foreground w-64">
+      <div className="p-6 border-b border-border">
         <h1 className="text-xl font-bold text-blue-400 flex items-center gap-2">
           <Stethoscope className="h-6 w-6" /> {/* Ícone Médico */}
           Eliza
@@ -48,7 +48,7 @@ export function AppSidebar() {
                 "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors",
                 isActive 
                   ? "bg-blue-500/10 text-blue-400" 
-                  : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100"
+                  : "text-zinc-400 hover:bg-background hover:text-foreground"
               )}
             >
               <item.icon className="h-4 w-4" />
@@ -58,7 +58,7 @@ export function AppSidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t border-zinc-800">
+      <div className="p-4 border-t border-border">
         <Button 
           variant="ghost" 
           className="w-full justify-start gap-2 text-red-400 hover:text-red-300 hover:bg-red-950/30"

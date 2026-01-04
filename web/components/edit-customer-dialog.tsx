@@ -35,26 +35,26 @@ export function EditCustomerDialog({ customer }: { customer: any }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="bg-zinc-900 border-zinc-800">
+        <Button variant="outline" className="bg-background border-border">
           <Pencil className="mr-2 h-4 w-4" /> Editar
         </Button>
       </DialogTrigger>
-      <DialogContent className="bg-zinc-900 border-zinc-800 text-white">
+      <DialogContent className="bg-background border-border text-white">
         <DialogHeader>
           <DialogTitle>Editar Paciente</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="grid gap-2">
             <Label>Nome Completo</Label>
-            <Input name="name" defaultValue={customer.name} required className="bg-zinc-950 border-zinc-800" />
+            <Input name="name" defaultValue={customer.name} required className="bg-zinc-950 border-border" />
           </div>
           <div className="grid gap-2">
             <Label>Telefone</Label>
-            <Input name="phone" defaultValue={customer.phone} className="bg-zinc-950 border-zinc-800" />
+            <Input name="phone" defaultValue={customer.phone} className="bg-zinc-950 border-border" />
           </div>
           <div className="grid gap-2">
             <Label>Documento (CPF)</Label>
-            <Input name="document" defaultValue={customer.document} className="bg-zinc-950 border-zinc-800" />
+            <Input name="document" defaultValue={customer.document} className="bg-zinc-950 border-border" />
           </div>
           <Button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Salvar Alterações'}

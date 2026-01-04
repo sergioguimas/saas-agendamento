@@ -47,7 +47,7 @@ export function CreateServiceDialog({ organization_id, serviceToEdit }: { organi
           <Button className="bg-blue-600 hover:bg-blue-700"><Plus className="mr-2 h-4 w-4" /> Novo Procedimento</Button>
         )}
       </DialogTrigger>
-      <DialogContent className="bg-zinc-900 border-zinc-800 text-white">
+      <DialogContent className="bg-background border-border text-white">
         <DialogHeader><DialogTitle>{serviceToEdit ? 'Editar' : 'Novo'} Procedimento</DialogTitle></DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input type="hidden" name="organization_id" value={organization_id} />
@@ -56,14 +56,14 @@ export function CreateServiceDialog({ organization_id, serviceToEdit }: { organi
           )}
           <div>
             <Label>Nome</Label>
-            <Input name="name" defaultValue={serviceToEdit?.title || serviceToEdit?.name} required className="bg-zinc-950 border-zinc-800" />
+            <Input name="name" defaultValue={serviceToEdit?.title || serviceToEdit?.name} required className="bg-zinc-950 border-border" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Duração (min)</Label>
-              <Input name="duration" type="number" defaultValue={serviceToEdit?.duration_minutes} className="bg-zinc-950 border-zinc-800" />
+              <Input name="duration" type="number" defaultValue={serviceToEdit?.duration_minutes} className="bg-zinc-950 border-border" />
             </div>
-            <div><Label>Preço (R$)</Label><Input name="price" type="number" step="0.01" defaultValue={serviceToEdit?.price} className="bg-zinc-950 border-zinc-800" /></div>
+            <div><Label>Preço (R$)</Label><Input name="price" type="number" step="0.01" defaultValue={serviceToEdit?.price} className="bg-zinc-950 border-border" /></div>
           </div>
           <div>
             <Label className="flex items-center gap-2 mb-2"><Palette className="h-4 w-4" /> Cor na Agenda</Label>

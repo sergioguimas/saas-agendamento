@@ -25,7 +25,7 @@ export default async function SetupPage() {
   return (
     <div className="p-8 max-w-2xl mx-auto space-y-6">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-zinc-100">Configuração Inicial</h1>
+        <h1 className="text-3xl font-bold text-foreground">Configuração Inicial</h1>
         <p className="text-zinc-400">
           Bem-vindo! Para começar, precisamos cadastrar as informações básicas da sua clínica ou consultório.
         </p>

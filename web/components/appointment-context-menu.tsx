@@ -43,10 +43,10 @@ export function AppointmentContextMenu({ children, appointment, className }: any
       <ContextMenuTrigger className={className}>
         {children}
       </ContextMenuTrigger>
-      <ContextMenuContent className="w-56 bg-zinc-900 border-zinc-800 text-zinc-200">
+      <ContextMenuContent className="w-56 bg-background border-border text-zinc-200">
         <ContextMenuSub>
           <ContextMenuSubTrigger>Alterar Status</ContextMenuSubTrigger>
-          <ContextMenuSubContent className="bg-zinc-900 border-zinc-800 text-zinc-200">
+          <ContextMenuSubContent className="bg-background border-border text-zinc-200">
             {Object.entries(STATUS_CONFIG).map(([key, value]) => (
               <ContextMenuItem 
                 key={key} 

@@ -124,8 +124,8 @@ export function CalendarView({ appointments, customers, services, staff, organiz
     }
 
     return (
-      <div className="rounded-md border border-zinc-800 bg-zinc-900 overflow-hidden">
-        <div className="grid grid-cols-7 border-b border-zinc-800 bg-zinc-950/50">
+      <div className="rounded-md border border-border bg-background overflow-hidden">
+        <div className="grid grid-cols-7 border-b border-border bg-zinc-950/50">
           {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((dayName) => (
             <div key={dayName} className="py-2 text-center text-xs font-semibold text-zinc-500 uppercase tracking-wider">
               {dayName}
@@ -145,9 +145,9 @@ export function CalendarView({ appointments, customers, services, staff, organiz
                   <div 
                     key={j} 
                     className={cn(
-                      "border-r border-b border-zinc-800/50 p-1 md:p-2 min-h-[80px] relative hover:bg-zinc-800/30 transition-colors group flex flex-col gap-1",
+                      "border-r border-b border-border/50 p-1 md:p-2 min-h-[80px] relative hover:bg-zinc-800/30 transition-colors group flex flex-col gap-1",
                       !isSameMonth(day, monthStart) && "bg-zinc-950/30 opacity-40",
-                      isToday(day) && "bg-zinc-900"
+                      isToday(day) && "bg-background"
                     )}
                   >
                     <span className={cn(
@@ -178,7 +178,7 @@ export function CalendarView({ appointments, customers, services, staff, organiz
     const hours = Array.from({ length: 14 }, (_, i) => i + 7);
 
     return (
-      <div className="rounded-md border border-zinc-800 bg-zinc-900 overflow-hidden flex flex-col h-[700px]">
+      <div className="rounded-md border border-border bg-background overflow-hidden flex flex-col h-[700px]">
         <div className="flex-1 overflow-y-auto">
           {hours.map(hour => {
             const hourAppointments = appointments.filter(apt => {
@@ -187,8 +187,8 @@ export function CalendarView({ appointments, customers, services, staff, organiz
             });
 
             return (
-              <div key={hour} className="grid grid-cols-[60px_1fr] min-h-[100px] border-b border-zinc-800/50 group hover:bg-zinc-800/20">
-                <div className="border-r border-zinc-800/50 p-2 text-right">
+              <div key={hour} className="grid grid-cols-[60px_1fr] min-h-[100px] border-b border-border/50 group hover:bg-zinc-800/20">
+                <div className="border-r border-border/50 p-2 text-right">
                   <span className="text-xs text-zinc-500 font-medium">
                     {hour.toString().padStart(2, '0')}:00
                   </span>
@@ -213,7 +213,7 @@ export function CalendarView({ appointments, customers, services, staff, organiz
     <div className="space-y-4">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="flex items-center rounded-md border border-zinc-800 bg-zinc-900 p-1">
+          <div className="flex items-center rounded-md border border-border bg-background p-1">
             <Button variant="ghost" size="icon" onClick={previous} className="h-8 w-8 text-zinc-400">
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -224,7 +224,7 @@ export function CalendarView({ appointments, customers, services, staff, organiz
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-          <h2 className="text-xl font-bold text-zinc-100 capitalize min-w-[200px]">
+          <h2 className="text-xl font-bold text-foreground capitalize min-w-[200px]">
             {view === 'day' 
               ? format(date, "d 'de' MMMM", { locale: ptBR }) 
               : format(date, 'MMMM yyyy', { locale: ptBR })}

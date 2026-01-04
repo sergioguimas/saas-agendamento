@@ -27,12 +27,12 @@ export function WhatsappTestButton() {
   }
 
   return (
-    <div className="flex gap-2 items-center p-4 border border-zinc-800 rounded-lg bg-zinc-900/50 mt-4">
+    <div className="flex gap-2 items-center p-4 border border-border rounded-lg bg-background/50 mt-4">
       <Input 
         placeholder="5511999999999" 
         value={phone} 
         onChange={e => setPhone(e.target.value)}
-        className="bg-zinc-950 border-zinc-800 w-40"
+        className="bg-zinc-950 border-border w-40"
       />
       <Button onClick={handleTest} disabled={loading} size="sm" className="bg-emerald-600 hover:bg-emerald-700">
         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}

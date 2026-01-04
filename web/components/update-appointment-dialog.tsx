@@ -67,7 +67,7 @@ export function EditAppointmentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] bg-zinc-900 border-zinc-800 text-zinc-100">
+      <DialogContent className="sm:max-w-[425px] bg-background border-border text-foreground">
         <DialogHeader>
           <DialogTitle>Editar Agendamento</DialogTitle>
           <DialogDescription className="text-zinc-400">
@@ -80,10 +80,10 @@ export function EditAppointmentDialog({
           <div className="grid gap-2">
             <Label htmlFor="customer" className="text-zinc-300">Paciente</Label>
             <Select name="customer_id" defaultValue={appointment.customer_id || appointment.customers?.id}>
-              <SelectTrigger className="bg-zinc-950 border-zinc-800">
+              <SelectTrigger className="bg-zinc-950 border-border">
                 <SelectValue placeholder="Selecione o paciente" />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-300">
+              <SelectContent className="bg-background border-border text-zinc-300">
                 {customers.map((customer) => (
                   <SelectItem key={customer.id} value={customer.id}>
                     {customer.name}
@@ -96,10 +96,10 @@ export function EditAppointmentDialog({
           <div className="grid gap-2">
             <Label htmlFor="service" className="text-zinc-300">Procedimento</Label>
             <Select name="service_id" defaultValue={appointment.service_id || appointment.services?.id}>
-              <SelectTrigger className="bg-zinc-950 border-zinc-800">
+              <SelectTrigger className="bg-zinc-950 border-border">
                 <SelectValue placeholder="Selecione o serviço" />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-300">
+              <SelectContent className="bg-background border-border text-zinc-300">
                 {services.map((service) => (
                   <SelectItem key={service.id} value={service.id}>
                     {service.name} - R$ {service.price}
@@ -117,7 +117,7 @@ export function EditAppointmentDialog({
                 name="date"
                 type="date"
                 defaultValue={defaultDate}
-                className="bg-zinc-950 border-zinc-800 text-zinc-100"
+                className="bg-zinc-950 border-border text-foreground"
                 required
               />
             </div>
@@ -128,7 +128,7 @@ export function EditAppointmentDialog({
                 name="time"
                 type="time"
                 defaultValue={defaultTime}
-                className="bg-zinc-950 border-zinc-800 text-zinc-100"
+                className="bg-zinc-950 border-border text-foreground"
                 required
               />
             </div>

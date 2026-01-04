@@ -46,7 +46,7 @@ export function CreatePatientDialog() {
           Novo Paciente
         </Button>
       </DialogTrigger>
-      <DialogContent className="bg-zinc-900 border-zinc-800 text-zinc-100 sm:max-w-[425px]">
+      <DialogContent className="bg-background border-border text-foreground sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Cadastrar Paciente</DialogTitle>
           <DialogDescription className="text-zinc-400">
@@ -56,16 +56,16 @@ export function CreatePatientDialog() {
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label htmlFor="name">Nome Completo</Label>
-            <Input id="name" name="name" placeholder="Ex: Maria Silva" required className="bg-zinc-950 border-zinc-800 focus:ring-blue-600" />
+            <Input id="name" name="name" placeholder="Ex: Maria Silva" required className="bg-zinc-950 border-border focus:ring-blue-600" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="phone">Telefone / WhatsApp</Label>
-              <Input id="phone" name="phone" placeholder="(11) 99999-9999" required className="bg-zinc-950 border-zinc-800 focus:ring-blue-600" />
+              <Input id="phone" name="phone" placeholder="(11) 99999-9999" required className="bg-zinc-950 border-border focus:ring-blue-600" />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="email">Email (Opcional)</Label>
-              <Input id="email" name="email" type="email" placeholder="paciente@email.com" className="bg-zinc-950 border-zinc-800 focus:ring-blue-600" />
+              <Input id="email" name="email" type="email" placeholder="paciente@email.com" className="bg-zinc-950 border-border focus:ring-blue-600" />
             </div>
           </div>
           <DialogFooter>

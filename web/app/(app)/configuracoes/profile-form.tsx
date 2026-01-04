@@ -30,9 +30,9 @@ export function ProfileForm({ profile }: { profile: any }) {
 
   return (
     <form onSubmit={handleSubmit}>
-      <Card className="bg-zinc-900 border-zinc-800">
+      <Card className="bg-background border-border">
         <CardHeader>
-          <CardTitle className="text-zinc-100">Meus Dados Profissionais</CardTitle>
+          <CardTitle className="text-foreground">Meus Dados Profissionais</CardTitle>
           <CardDescription className="text-zinc-400">
             Essas informações aparecerão na assinatura dos seus documentos.
           </CardDescription>
@@ -44,7 +44,7 @@ export function ProfileForm({ profile }: { profile: any }) {
             <Input 
               id="full_name" 
               name="full_name" 
-              className="bg-zinc-950 border-zinc-800 text-zinc-100"
+              className="bg-zinc-950 border-border text-foreground"
               placeholder="Ex: Dr. Pedro Santos"
             />
           </div>
@@ -56,7 +56,7 @@ export function ProfileForm({ profile }: { profile: any }) {
                 id="user_crm" 
                 name="crm" 
                 defaultValue={profile.crm || ''} 
-                className="bg-zinc-950 border-zinc-800 text-zinc-100"
+                className="bg-zinc-950 border-border text-foreground"
                 placeholder="CRM/MG 00000"
               />
             </div>
@@ -66,14 +66,14 @@ export function ProfileForm({ profile }: { profile: any }) {
                 id="specialty" 
                 name="specialty" 
                 defaultValue={profile.specialty || ''} 
-                className="bg-zinc-950 border-zinc-800 text-zinc-100"
+                className="bg-zinc-950 border-border text-foreground"
                 placeholder="Ex: Dermatologista"
               />
             </div>
           </div>
         </CardContent>
 
-        <CardFooter className="border-t border-zinc-800 px-6 py-4">
+        <CardFooter className="border-t border-border px-6 py-4">
           <Button type="submit" disabled={loading} className="bg-zinc-100 text-zinc-900 hover:bg-zinc-200 gap-2">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserCog className="h-4 w-4" />}
             Salvar Meu Perfil

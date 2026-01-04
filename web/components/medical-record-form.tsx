@@ -36,7 +36,7 @@ export function MedicalRecordForm({ customerId }: { customerId: string }) {
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder="Descreva a evolução clínica do paciente..." 
-        className="min-h-[200px] bg-zinc-950 border-zinc-800 focus:ring-blue-500 text-zinc-100"
+        className="min-h-[200px] bg-zinc-950 border-border focus:ring-blue-500 text-foreground"
       />
       <div className="flex justify-end">
         <Button 

@@ -50,17 +50,17 @@ export function CustomerDetailsHeader({ customer }: CustomerDetailsHeaderProps) 
             variant="outline" 
             size="icon" 
             onClick={() => router.back()} 
-            className="border-zinc-800 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 shrink-0"
+            className="border-border text-zinc-400 hover:text-foreground hover:bg-background shrink-0"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-zinc-100 flex items-center gap-3">
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground flex items-center gap-3">
               {customer.name}
             </h1>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-zinc-400 mt-1">
-              <span className="capitalize px-2 py-0.5 rounded-full bg-zinc-900 border border-zinc-800 text-xs">
+              <span className="capitalize px-2 py-0.5 rounded-full bg-background border border-border text-xs">
                 {customer.gender || 'Gênero n/d'}
               </span>
               
@@ -84,7 +84,7 @@ export function CustomerDetailsHeader({ customer }: CustomerDetailsHeaderProps) 
           <Button 
             variant="outline" 
             onClick={() => window.open(`/print/history/${customer.id}`, '_blank')}
-            className="border-zinc-800 text-zinc-300 hover:bg-zinc-900 gap-2 hidden md:flex"
+            className="border-border text-zinc-300 hover:bg-background gap-2 hidden md:flex"
             title="Imprimir Histórico Completo"
           >
             <Printer className="h-4 w-4" />
@@ -94,7 +94,7 @@ export function CustomerDetailsHeader({ customer }: CustomerDetailsHeaderProps) 
           <Button 
             variant="outline" 
             onClick={() => setShowEditDialog(true)}
-            className="border-zinc-800 text-zinc-300 hover:bg-zinc-900 gap-2"
+            className="border-border text-zinc-300 hover:bg-background gap-2"
           >
             <Pencil className="h-4 w-4" />
             Editar

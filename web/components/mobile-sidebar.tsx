@@ -24,7 +24,7 @@ export function MobileSidebar({ clinicName }: { clinicName: string }) {
         </Button>
       </SheetTrigger>
       
-      <SheetContent side="left" className="p-0 bg-zinc-950 border-zinc-800 w-72 text-zinc-100">
+      <SheetContent side="left" className="p-0 bg-zinc-950 border-border w-72 text-foreground">
         <VisuallyHidden>
           <SheetTitle>Menu de Navegação</SheetTitle>
         </VisuallyHidden>

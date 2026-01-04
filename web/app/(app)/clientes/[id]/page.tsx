@@ -49,12 +49,12 @@ export default async function PacienteDetalhesPage({
     .order('start_time', { ascending: false });
 
   return (
-    <div className="p-8 bg-black min-h-screen text-zinc-100">
+    <div className="p-8 bg-black min-h-screen text-foreground">
       {/* Cabeçalho de Ações */}
       <div className="flex flex-col md:flex-row justify-between gap-4 mb-8">
         <div className="flex items-center gap-4">
           <Link href="/clientes">
-            <Button variant="ghost" size="icon" className="bg-zinc-900 border border-zinc-800">
+            <Button variant="ghost" size="icon" className="bg-background border border-border">
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
@@ -83,7 +83,7 @@ export default async function PacienteDetalhesPage({
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="outline" className="bg-zinc-900 border-zinc-800"><Printer className="mr-2 h-4 w-4" /> Histórico</Button>
+          <Button variant="outline" className="bg-background border-border"><Printer className="mr-2 h-4 w-4" /> Histórico</Button>
           
           {/* Passamos o customer. Se der erro de tipo aqui, é porque o componente EditCustomerDialog precisa ser atualizado também */}
           <EditCustomerDialog customer={customer as any} />
@@ -107,7 +107,7 @@ export default async function PacienteDetalhesPage({
 
       {/* Abas de Navegação */}
       <Tabs defaultValue="prontuario" className="w-full space-y-6">
-        <TabsList className="grid w-full grid-cols-3 bg-zinc-900 border border-zinc-800 h-12">
+        <TabsList className="grid w-full grid-cols-3 bg-background border border-border h-12">
           <TabsTrigger value="dados" className="data-[state=active]:bg-zinc-800">Dados Cadastrais</TabsTrigger>
           <TabsTrigger value="prontuario" className="data-[state=active]:bg-zinc-800">Notas de Serviço</TabsTrigger>
           <TabsTrigger value="historico" className="data-[state=active]:bg-zinc-800">Histórico</TabsTrigger>
@@ -115,31 +115,31 @@ export default async function PacienteDetalhesPage({
 
         {/* Aba: Dados Cadastrais */}
         <TabsContent value="dados" className="space-y-4 outline-none">
-          <Card className="bg-zinc-900/40 border-zinc-800">
+          <Card className="bg-background/40 border-border">
             <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-1">
                 <p className="text-xs text-zinc-500 uppercase font-semibold">Nome Completo</p>
-                <p className="text-zinc-100">{customer.name}</p>
+                <p className="text-foreground">{customer.name}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-xs text-zinc-500 uppercase font-semibold">WhatsApp / Telefone</p>
-                <p className="text-zinc-100">{customer.phone || 'Não informado'}</p>
+                <p className="text-foreground">{customer.phone || 'Não informado'}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-xs text-zinc-500 uppercase font-semibold">Email</p>
-                <p className="text-zinc-100">{customer.email || 'Não informado'}</p>
+                <p className="text-foreground">{customer.email || 'Não informado'}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-xs text-zinc-500 uppercase font-semibold">Documento</p>
-                <p className="text-zinc-100">{customer.document || '-'}</p>
+                <p className="text-foreground">{customer.document || '-'}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-xs text-zinc-500 uppercase font-semibold">Gênero</p>
-                <p className="text-zinc-100">{customer.gender || '-'}</p>
+                <p className="text-foreground">{customer.gender || '-'}</p>
               </div>
                <div className="space-y-1">
                 <p className="text-xs text-zinc-500 uppercase font-semibold">Observações</p>
-                <p className="text-zinc-100">{customer.notes || '-'}</p>
+                <p className="text-foreground">{customer.notes || '-'}</p>
               </div>
             </CardContent>
           </Card>
@@ -147,7 +147,7 @@ export default async function PacienteDetalhesPage({
 
         {/* Aba: Prontuário (Service Notes) */}
         <TabsContent value="prontuario" className="space-y-6 outline-none">
-          <Card className="bg-zinc-900/40 border-zinc-800">
+          <Card className="bg-background/40 border-border">
             <CardContent className="p-6">
               <MedicalRecordForm customerId={id} />
             </CardContent>
@@ -164,12 +164,12 @@ export default async function PacienteDetalhesPage({
           <div className="grid gap-4">
             {appointments && appointments.length > 0 ? (
               appointments.map((app: any) => (
-                <Card key={app.id} className="bg-zinc-900/40 border-zinc-800">
+                <Card key={app.id} className="bg-background/40 border-border">
                   <CardContent className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <div className="h-3 w-3 rounded-full" style={{ backgroundColor: '#3b82f6' }} />
                       <div>
-                        <p className="font-bold text-zinc-100">{app.services?.title || 'Serviço'}</p>
+                        <p className="font-bold text-foreground">{app.services?.title || 'Serviço'}</p>
                         <p className="text-xs text-zinc-500">
                           {new Date(app.start_time).toLocaleString('pt-BR')}
                         </p>
@@ -182,7 +182,7 @@ export default async function PacienteDetalhesPage({
                 </Card>
               ))
             ) : (
-              <div className="py-12 text-center border-2 border-dashed border-zinc-800 rounded-xl text-zinc-600">
+              <div className="py-12 text-center border-2 border-dashed border-border rounded-xl text-zinc-600">
                 Nenhum agendamento encontrado.
               </div>
             )}

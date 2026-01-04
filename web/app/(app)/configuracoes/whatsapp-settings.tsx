@@ -66,15 +66,15 @@ export function WhatsappSettings({ initialStatus }: WhatsappSettingsProps) {
   }
 
   return (
-    <Card className="bg-zinc-900 border-zinc-800 overflow-hidden">
-      <CardHeader className="border-b border-zinc-800 bg-zinc-900/50">
+    <Card className="bg-background border-border overflow-hidden">
+      <CardHeader className="border-b border-border bg-background/50">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className={`p-2 rounded-lg ${isConnected ? 'bg-emerald-500/10' : 'bg-blue-500/10'}`}>
               <Smartphone className={`h-5 w-5 ${isConnected ? 'text-emerald-500' : 'text-blue-500'}`} />
             </div>
             <div>
-              <CardTitle className="text-zinc-100">Integração WhatsApp</CardTitle>
+              <CardTitle className="text-foreground">Integração WhatsApp</CardTitle>
               <CardDescription className="text-zinc-400">
                 Conecte o WhatsApp da clínica para enviar confirmações automáticas.
               </CardDescription>
@@ -98,12 +98,12 @@ export function WhatsappSettings({ initialStatus }: WhatsappSettingsProps) {
               <CheckCircle2 className="h-12 w-12 text-emerald-500" />
             </div>
             <div>
-              <h3 className="text-zinc-100 font-medium">Conexão Ativa</h3>
+              <h3 className="text-foreground font-medium">Conexão Ativa</h3>
               <p className="text-sm text-zinc-400 max-w-[280px]">
                 Sua instância está pronta para enviar mensagens automáticas.
               </p>
             </div>
-            <Button variant="outline" size="sm" onClick={handleConnect} className="border-zinc-800 text-zinc-400 hover:text-zinc-100">
+            <Button variant="outline" size="sm" onClick={handleConnect} className="border-border text-zinc-400 hover:text-foreground">
               <RefreshCw className="h-4 w-4 mr-2" /> Atualizar Status
             </Button>
           </div>

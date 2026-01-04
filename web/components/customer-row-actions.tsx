@@ -58,12 +58,12 @@ export function CustomerRowActions({ customer }: CustomerRowActionsProps) {
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-zinc-100 focus-visible:ring-0">
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-foreground focus-visible:ring-0">
             <span className="sr-only">Abrir menu</span>
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800 text-zinc-300">
+        <DropdownMenuContent align="end" className="bg-background border-border text-zinc-300">
           <DropdownMenuLabel>Ações</DropdownMenuLabel>
           
           <DropdownMenuItem onClick={() => router.push(`/clientes/${customer.id}`)} className="cursor-pointer focus:bg-zinc-800">

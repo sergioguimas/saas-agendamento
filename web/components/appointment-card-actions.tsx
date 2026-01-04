@@ -63,7 +63,6 @@ export function AppointmentCardActions({ appointment }: AppointmentCardActionsPr
             variant="ghost" 
             size="icon" 
             className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground data-[state=open]:bg-accent"
-            // CORREÇÃO AQUI: O evento é tratado no componente Client
             onClick={(e) => {
                 e.preventDefault() // Evita que o Link pai navegue
                 e.stopPropagation() // Evita que o Link pai perceba o clique
@@ -74,15 +73,14 @@ export function AppointmentCardActions({ appointment }: AppointmentCardActionsPr
         </Button>
       </DropdownMenuTrigger>
       
-      {/* O resto continua igual */}
-      <DropdownMenuContent align="end" className="w-48 bg-zinc-900 border-zinc-800 text-zinc-200">
+      <DropdownMenuContent align="end" className="w-48 bg-background border-border text-zinc-200">
         <DropdownMenuLabel>Ações Rápidas</DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-zinc-800" />
         
         <DropdownMenuItem 
             onClick={(e) => { e.stopPropagation(); updateStatus('confirmed', 'Confirmado') }}
             disabled={loading}
-            className="cursor-pointer focus:bg-zinc-800 focus:text-zinc-100"
+            className="cursor-pointer focus:bg-zinc-800 focus:text-foreground"
         >
           <Check className="mr-2 h-4 w-4 text-blue-500" />
           <span>Confirmar</span>
@@ -91,7 +89,7 @@ export function AppointmentCardActions({ appointment }: AppointmentCardActionsPr
         <DropdownMenuItem 
             onClick={(e) => { e.stopPropagation(); updateStatus('arrived', 'Na Recepção') }}
             disabled={loading}
-            className="cursor-pointer focus:bg-zinc-800 focus:text-zinc-100"
+            className="cursor-pointer focus:bg-zinc-800 focus:text-foreground"
         >
           <UserCheck className="mr-2 h-4 w-4 text-amber-500" />
           <span>Chegou</span>
@@ -100,7 +98,7 @@ export function AppointmentCardActions({ appointment }: AppointmentCardActionsPr
         <DropdownMenuItem 
             onClick={(e) => { e.stopPropagation(); updateStatus('completed', 'Finalizado') }}
             disabled={loading}
-            className="cursor-pointer focus:bg-zinc-800 focus:text-zinc-100"
+            className="cursor-pointer focus:bg-zinc-800 focus:text-foreground"
         >
           <CheckCircle className="mr-2 h-4 w-4 text-emerald-500" />
           <span>Finalizar</span>
