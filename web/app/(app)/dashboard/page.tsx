@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
-import Link from 'next/link' // <--- IMPORT NOVO
+import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 import { 
   Users, 
@@ -9,7 +9,8 @@ import {
   Building2, 
   ShieldCheck,
   CheckCircle2,
-  Clock
+  Clock,
+  MoreHorizontal // <--- NOVO IMPORT
 } from 'lucide-react'
 import { AppointmentContextMenu } from "@/components/appointment-context-menu"
 import { cn } from "@/lib/utils"
@@ -120,7 +121,6 @@ export default async function DashboardPage() {
       {/* Grid de Cards Clicáveis */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         
-        {/* Procedimentos -> /servicos */}
         <Link href="/servicos" className="block group">
           <Card className="bg-card border-border group-hover:bg-accent/20 group-hover:border-primary/50 transition-all cursor-pointer h-full">
             <CardContent className="p-4 flex justify-between items-start">
@@ -135,7 +135,6 @@ export default async function DashboardPage() {
           </Card>
         </Link>
 
-        {/* Pacientes -> /clientes */}
         <Link href="/clientes" className="block group">
           <Card className="bg-card border-border group-hover:bg-accent/20 group-hover:border-primary/50 transition-all cursor-pointer h-full">
             <CardContent className="p-4 flex justify-between items-start">
@@ -150,7 +149,6 @@ export default async function DashboardPage() {
           </Card>
         </Link>
 
-        {/* Agenda Hoje -> /agendamentos */}
         <Link href="/agendamentos" className="block group">
           <Card className="bg-card border-border group-hover:bg-accent/20 group-hover:border-primary/50 transition-all cursor-pointer h-full">
             <CardContent className="p-4 flex justify-between items-start">
@@ -165,7 +163,6 @@ export default async function DashboardPage() {
           </Card>
         </Link>
 
-        {/* Presença -> /agendamentos (Pois é lá que confirma) */}
         <Link href="/agendamentos" className="block group">
           <Card className="bg-card border-border group-hover:bg-accent/20 group-hover:border-primary/50 transition-all cursor-pointer h-full">
             <CardContent className="p-4 flex justify-between items-start">
@@ -202,11 +199,12 @@ export default async function DashboardPage() {
                 services={servicesList}
               >
                 <Card 
-                  className="bg-card border-border p-4 border-l-4 cursor-context-menu hover:bg-accent/50 transition-all group" 
+                  className="bg-card border-border p-4 border-l-10 cursor-context-menu hover:bg-accent/50 transition-all group relative overflow-hidden" 
                   style={{ borderLeftColor: app.services?.color || '#3b82f6' }}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
+                      {/* Avatar */}
                       <div className="h-10 w-10 rounded-full bg-muted border border-border flex items-center justify-center font-bold text-xs text-primary group-hover:border-primary/50 transition-colors">
                         {app.customers?.name?.substring(0, 2).toUpperCase()}
                       </div>
@@ -227,17 +225,25 @@ export default async function DashboardPage() {
                       </div>
                     </div>
                     
-                    <span className={cn(
-                      "px-2 py-0.5 rounded-full text-[9px] font-bold border uppercase tracking-wider",
-                      app.status === 'scheduled' && "bg-blue-500/10 text-blue-500 border-blue-500/20",
-                      app.status === 'arrived' && "bg-amber-500/10 text-amber-500 border-amber-500/20",
-                      app.status === 'completed' && "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-                      app.status === 'canceled' && "bg-destructive/10 text-destructive border-destructive/20"
-                    )}>
-                      {app.status === 'scheduled' ? 'Agendado' : 
-                       app.status === 'arrived' ? 'Na Recepção' : 
-                       app.status === 'completed' ? 'Finalizado' : 'Cancelado'}
-                    </span>
+                    {/* LADO DIREITO: Status + Botão de Ação Visual */}
+                    <div className="flex items-center gap-3">
+                      <span className={cn(
+                        "px-2 py-0.5 rounded-full text-[9px] font-bold border uppercase tracking-wider",
+                        app.status === 'scheduled' && "bg-blue-500/10 text-blue-500 border-blue-500/20",
+                        app.status === 'arrived' && "bg-amber-500/10 text-amber-500 border-amber-500/20",
+                        app.status === 'completed' && "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+                        app.status === 'canceled' && "bg-destructive/10 text-destructive border-destructive/20"
+                      )}>
+                        {app.status === 'scheduled' ? 'Agendado' : 
+                         app.status === 'arrived' ? 'Na Recepção' : 
+                         app.status === 'completed' ? 'Finalizado' : 'Cancelado'}
+                      </span>
+
+                      {/* Ícone de 3 pontos para indicar que é clicável */}
+                      <div className="h-8 w-8 flex items-center justify-center rounded-md bg-transparent hover:bg-muted transition-colors text-muted-foreground group-hover:text-foreground">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </div>
+                    </div>
                   </div>
                 </Card>
               </AppointmentContextMenu>
