@@ -29,31 +29,31 @@ type Props = {
 }
 
 export function CalendarView({ appointments, customers, services, staff, organization_id }: Props) {
-  // 1. Inicializa como undefined para evitar erro de Hydration
-  const [date, setDate] = useState<Date | undefined>(undefined)
-  const [mounted, setMounted] = useState(false)
+  // 1. Inicializa com uma data válida para evitar erro de "undefined" no componente Calendar
+  const [date, setDate] = useState<Date>(new Date())
+  
+  // 2. Controla se estamos no cliente (navegador)
+  const [isMounted, setIsMounted] = useState(false)
 
-  // 2. Assim que o componente montar no navegador, definimos a data atual
-  // O navegador do usuário sabe o fuso horário correto automaticamente.
   useEffect(() => {
-    setDate(new Date())
-    setMounted(true)
+    setIsMounted(true)
   }, [])
 
-  // 3. Enquanto não montou ou não tem data, não exibe nada para não quebrar
-  if (!mounted || !date) {
+  // 3. Lógica de renderização segura
+  // Se não montou, não renderiza o conteúdo sensível a data para evitar Hydration Error
+  if (!isMounted) {
     return (
-        <div className="w-full h-96 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
+      <div className="flex flex-col md:flex-row gap-6 opacity-0">
+         {/* Renderiza invisível apenas para manter estrutura básica layout shift */}
+         <div className="w-full md:w-auto h-fit">Loading...</div>
+      </div>
     )
   }
 
-  // Filtra agendamentos do dia selecionado
+  // Filtra agendamentos
   const dailyAppointments = appointments
     .filter(app => {
       if (!date) return false
-      // Garante que comparamos objetos de Data válidos
       const appDate = new Date(app.start_time)
       return isSameDay(appDate, date)
     })
@@ -67,7 +67,7 @@ export function CalendarView({ appointments, customers, services, staff, organiz
           <Calendar
             mode="single"
             selected={date}
-            onSelect={setDate}
+            onSelect={(day) => day && setDate(day)} // Proteção extra: só atualiza se 'day' não for nulo
             locale={ptBR}
             className="rounded-md border"
           />
@@ -78,8 +78,7 @@ export function CalendarView({ appointments, customers, services, staff, organiz
       <Card className="flex-1">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle>
-            {/* O date-fns só roda se date for válido agora */}
-            {date && format(date, "EEEE, d 'de' MMMM", { locale: ptBR })}
+            {format(date, "EEEE, d 'de' MMMM", { locale: ptBR })}
           </CardTitle>
           <CreateAppointmentDialog 
             customers={customers} 
