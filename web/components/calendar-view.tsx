@@ -10,15 +10,6 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AppointmentContextMenu } from "./appointment-context-menu"
 import { STATUS_CONFIG } from "@/lib/appointment-config"
 
-// --- FUNÇÃO DE CORREÇÃO DE FUSO ---
-// Garante que pegamos a data atual do Brasil, mesmo rodando no servidor UTC da Vercel
-function getBrazilDate() {
-  const now = new Date()
-  // Cria uma data baseada no fuso de São Paulo
-  const brazilTime = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }))
-  return brazilTime
-}
-
 type Appointment = {
   id: string
   start_time: string
@@ -38,30 +29,35 @@ type Props = {
 }
 
 export function CalendarView({ appointments, customers, services, staff, organization_id }: Props) {
-  // Inicializa usando a hora do Brasil
-  const [date, setDate] = useState<Date | undefined>(getBrazilDate())
-  
-  // Estado para garantir que a UI só renderize data final no cliente (evita erro de hidratação)
+  // 1. Inicializa como undefined para evitar erro de Hydration
+  const [date, setDate] = useState<Date | undefined>(undefined)
   const [mounted, setMounted] = useState(false)
 
+  // 2. Assim que o componente montar no navegador, definimos a data atual
+  // O navegador do usuário sabe o fuso horário correto automaticamente.
   useEffect(() => {
-    setMounted(true)
-    // Atualiza para a data do navegador do cliente para ter certeza absoluta
     setDate(new Date())
+    setMounted(true)
   }, [])
+
+  // 3. Enquanto não montou ou não tem data, não exibe nada para não quebrar
+  if (!mounted || !date) {
+    return (
+        <div className="w-full h-96 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+    )
+  }
 
   // Filtra agendamentos do dia selecionado
   const dailyAppointments = appointments
     .filter(app => {
       if (!date) return false
-      // Ajuste: Compara datas locais para evitar confusão de fuso
+      // Garante que comparamos objetos de Data válidos
       const appDate = new Date(app.start_time)
       return isSameDay(appDate, date)
     })
     .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
-
-  // Se ainda não montou no cliente, não renderiza o calendário para evitar glitch visual
-  if (!mounted) return null
 
   return (
     <div className="flex flex-col md:flex-row gap-6">
@@ -82,7 +78,8 @@ export function CalendarView({ appointments, customers, services, staff, organiz
       <Card className="flex-1">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle>
-            {date ? format(date, "EEEE, d 'de' MMMM", { locale: ptBR }) : 'Selecione uma data'}
+            {/* O date-fns só roda se date for válido agora */}
+            {date && format(date, "EEEE, d 'de' MMMM", { locale: ptBR })}
           </CardTitle>
           <CreateAppointmentDialog 
             customers={customers} 
