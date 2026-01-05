@@ -1,257 +1,146 @@
 'use client'
 
-import { useState } from "react"
-import { 
-  format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, 
-  isSameMonth, isSameDay, addMonths, subMonths, addDays, subDays, 
-  isToday, parseISO, startOfDay, addWeeks, subWeeks, getHours
-} from "date-fns"
+import { useState, useEffect } from "react"
+import { Calendar } from "@/components/ui/calendar"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { format, isSameDay } from "date-fns"
 import { ptBR } from "date-fns/locale"
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
 import { CreateAppointmentDialog } from "@/components/create-appointment-dialog"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AppointmentContextMenu } from "./appointment-context-menu"
 import { STATUS_CONFIG } from "@/lib/appointment-config"
 
-// Tipo alinhado com o Banco de Dados
+// --- FUNÇÃO DE CORREÇÃO DE FUSO ---
+// Garante que pegamos a data atual do Brasil, mesmo rodando no servidor UTC da Vercel
+function getBrazilDate() {
+  const now = new Date()
+  // Cria uma data baseada no fuso de São Paulo
+  const brazilTime = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }))
+  return brazilTime
+}
+
 type Appointment = {
   id: string
   start_time: string
   end_time: string
-  status: string | null
-  customers: { name: string } | any
-  services: { title: string; color?: string } | any 
+  status: string
+  customer: { name: string } | null
+  service: { title: string }
+  profile: { full_name: string } | null
 }
 
 type Props = {
   appointments: Appointment[]
-  customers: { id: string; name: string }[]
-  services: { id: string; title: string }[] // Agora usa TITLE
-  staff: { id: string; full_name: string }[] // Agora aceita STAFF
+  customers: any[]
+  services: any[]
+  staff: any[]
   organization_id: string
 }
 
-const getRawHour = (dateString: string) => {
-  return new Date(dateString).getUTCHours();
-};
-
 export function CalendarView({ appointments, customers, services, staff, organization_id }: Props) {
-  const [date, setDate] = useState(new Date())
-  const [view, setView] = useState<'month' | 'week' | 'day'>('month')
-
-  function next() {
-    if (view === 'month') setDate(addMonths(date, 1))
-    else if (view === 'week') setDate(addWeeks(date, 1))
-    else setDate(addDays(date, 1))
-  }
-
-  function previous() {
-    if (view === 'month') setDate(subMonths(date, 1))
-    else if (view === 'week') setDate(subWeeks(date, 1))
-    else setDate(subDays(date, 1))
-  }
-
-  function today() {
-    setDate(new Date())
-  }
+  // Inicializa usando a hora do Brasil
+  const [date, setDate] = useState<Date | undefined>(getBrazilDate())
   
-  function AppointmentCard({ appointment }: { appointment: Appointment }) {
-    const status = appointment.status || 'scheduled'
-    const config = STATUS_CONFIG[status] || STATUS_CONFIG['scheduled']
-    const serviceColor = appointment.services?.color || '#3b82f6'
-    const isScheduled = status === 'scheduled'
+  // Estado para garantir que a UI só renderize data final no cliente (evita erro de hidratação)
+  const [mounted, setMounted] = useState(false)
 
-    return (
-      <AppointmentContextMenu appointment={appointment} className="h-full" customers={customers} services={services}>
-        <div 
-          className={cn(
-            "px-2 py-1 rounded border text-[10px] md:text-xs font-medium h-full flex flex-col justify-center gap-0.5 transition-all hover:brightness-110 shadow-sm overflow-hidden text-zinc-200",
-            !isScheduled && config.color
-          )}
-          style={isScheduled ? {
-            backgroundColor: `${serviceColor}15`,
-            borderLeft: `3px solid ${serviceColor}`,
-            borderTop: `1px solid ${serviceColor}30`,
-            borderRight: `1px solid ${serviceColor}30`,
-            borderBottom: `1px solid ${serviceColor}30`,
-          } : {}}
-        >
-          <div className="flex justify-between items-center w-full">
-            <span className="truncate font-bold max-w-[85%]">
-              {appointment.customers?.name || 'Sem nome'}
-            </span>
-            {!isScheduled && (
-              <config.icon className="h-3 w-3 shrink-0 opacity-80" />
-            )}
-          </div>
-          
-          <div className="flex justify-between items-center opacity-70 text-[10px]">
-            {/* CORREÇÃO: Usa title */}
-            <span className="truncate max-w-[60%]">{appointment.services?.title}</span>
-            <span>
-              {new Date(appointment.start_time).toLocaleTimeString('pt-BR', { 
-                hour: '2-digit', 
-                minute: '2-digit',
-                timeZone: 'UTC'
-              })}
-            </span>
-          </div>
-        </div>
-      </AppointmentContextMenu>
-    )
-  }
+  useEffect(() => {
+    setMounted(true)
+    // Atualiza para a data do navegador do cliente para ter certeza absoluta
+    setDate(new Date())
+  }, [])
 
-  function renderMonthView() {
-    const monthStart = startOfMonth(date)
-    const monthEnd = endOfMonth(monthStart)
-    const startDate = startOfWeek(monthStart)
-    const endDate = endOfWeek(monthEnd)
+  // Filtra agendamentos do dia selecionado
+  const dailyAppointments = appointments
+    .filter(app => {
+      if (!date) return false
+      // Ajuste: Compara datas locais para evitar confusão de fuso
+      const appDate = new Date(app.start_time)
+      return isSameDay(appDate, date)
+    })
+    .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
 
-    const calendarDays = eachDayOfInterval({ start: startDate, end: endDate })
-    const weeks = []
-    let days = []
-    let day = startDate
-
-    while (day <= endDate) {
-      for (let i = 0; i < 7; i++) {
-        days.push(day)
-        day = addDays(day, 1)
-      }
-      weeks.push(days)
-      days = []
-    }
-
-    return (
-      <div className="rounded-md border border-border bg-background overflow-hidden">
-        <div className="grid grid-cols-7 border-b border-border bg-zinc-950/50">
-          {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((dayName) => (
-            <div key={dayName} className="py-2 text-center text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-              {dayName}
-            </div>
-          ))}
-        </div>
-        
-        <div className="grid grid-rows-5 md:grid-rows-6 h-[600px] md:h-[700px]">
-          {weeks.map((week, i) => (
-            <div key={i} className="grid grid-cols-7">
-              {week.map((day, j) => {
-                const dayAppointments = appointments.filter(apt => 
-                  isSameDay(parseISO(apt.start_time), day)
-                ).sort((a, b) => a.start_time.localeCompare(b.start_time))
-
-                return (
-                  <div 
-                    key={j} 
-                    className={cn(
-                      "border-r border-b border-border/50 p-1 md:p-2 min-h-[80px] relative hover:bg-zinc-800/30 transition-colors group flex flex-col gap-1",
-                      !isSameMonth(day, monthStart) && "bg-zinc-950/30 opacity-40",
-                      isToday(day) && "bg-background"
-                    )}
-                  >
-                    <span className={cn(
-                      "text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full mb-1",
-                      isToday(day) ? "bg-blue-600 text-white" : "text-zinc-400 group-hover:text-zinc-200"
-                    )}>
-                      {format(day, 'd')}
-                    </span>
-                    
-                    <div className="flex flex-col gap-1 overflow-y-auto max-h-[100px] no-scrollbar">
-                      {dayAppointments.map(apt => (
-                        <div key={apt.id} className="h-auto">
-                           <AppointmentCard appointment={apt} />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          ))}
-        </div>
-      </div>
-    )
-  }
-
-  function renderDayView() {
-    const hours = Array.from({ length: 14 }, (_, i) => i + 7);
-
-    return (
-      <div className="rounded-md border border-border bg-background overflow-hidden flex flex-col h-[700px]">
-        <div className="flex-1 overflow-y-auto">
-          {hours.map(hour => {
-            const hourAppointments = appointments.filter(apt => {
-              const aptDate = new Date(apt.start_time);
-              return isSameDay(aptDate, date) && getRawHour(apt.start_time) === hour;
-            });
-
-            return (
-              <div key={hour} className="grid grid-cols-[60px_1fr] min-h-[100px] border-b border-border/50 group hover:bg-zinc-800/20">
-                <div className="border-r border-border/50 p-2 text-right">
-                  <span className="text-xs text-zinc-500 font-medium">
-                    {hour.toString().padStart(2, '0')}:00
-                  </span>
-                </div>
-                
-                <div className="p-1 md:p-2 relative flex gap-2 overflow-x-auto">
-                  {hourAppointments.map(apt => (
-                    <div key={apt.id} className="flex-1 min-w-[150px] max-w-[250px]">
-                      <AppointmentCard appointment={apt} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
+  // Se ainda não montou no cliente, não renderiza o calendário para evitar glitch visual
+  if (!mounted) return null
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center rounded-md border border-border bg-background p-1">
-            <Button variant="ghost" size="icon" onClick={previous} className="h-8 w-8 text-zinc-400">
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={today} className="h-8 w-8 text-zinc-400">
-              <CalendarIcon className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={next} className="h-8 w-8 text-zinc-400">
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-          <h2 className="text-xl font-bold text-foreground capitalize min-w-[200px]">
-            {view === 'day' 
-              ? format(date, "d 'de' MMMM", { locale: ptBR }) 
-              : format(date, 'MMMM yyyy', { locale: ptBR })}
-          </h2>
-        </div>
+    <div className="flex flex-col md:flex-row gap-6">
+      {/* Coluna da Esquerda: Calendário */}
+      <Card className="w-full md:w-auto h-fit">
+        <CardContent className="p-0">
+          <Calendar
+            mode="single"
+            selected={date}
+            onSelect={setDate}
+            locale={ptBR}
+            className="rounded-md border"
+          />
+        </CardContent>
+      </Card>
 
-        <div className="flex items-center gap-2">
-          <Tabs value={view} onValueChange={(v) => setView(v as any)} className="w-[200px]">
-            <TabsList className="grid w-full grid-cols-3 bg-zinc-950">
-              <TabsTrigger value="month">Mês</TabsTrigger>
-              <TabsTrigger value="week" disabled className="opacity-50">Sem</TabsTrigger>
-              <TabsTrigger value="day">Dia</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          <div className="h-6 w-px bg-zinc-800 mx-2 hidden md:block" />
-          
+      {/* Coluna da Direita: Lista de Agendamentos */}
+      <Card className="flex-1">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle>
+            {date ? format(date, "EEEE, d 'de' MMMM", { locale: ptBR }) : 'Selecione uma data'}
+          </CardTitle>
           <CreateAppointmentDialog 
             customers={customers} 
             services={services} 
-            staff={staff} // Passando staff
-            organization_id={organization_id} 
+            staff={staff}
+            organization_id={organization_id}
           />
-        </div>
-      </div>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="all" className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="all">Todos</TabsTrigger>
+              <TabsTrigger value="morning">Manhã</TabsTrigger>
+              <TabsTrigger value="afternoon">Tarde</TabsTrigger>
+            </TabsList>
 
-      {view === 'month' && renderMonthView()}
-      {view === 'day' && renderDayView()}
+            <div className="space-y-4">
+              {dailyAppointments.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8">
+                  Nenhum agendamento para este dia.
+                </p>
+              ) : (
+                dailyAppointments.map((app) => {
+                  const statusColor = STATUS_CONFIG[app.status as keyof typeof STATUS_CONFIG] || "bg-gray-500"
+                  
+                  return (
+                    <AppointmentContextMenu key={app.id} appointmentId={app.id}>
+                      <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent transition-colors cursor-pointer group">
+                        <div className="flex items-center gap-4">
+                          <div className={`w-2 h-12 rounded-full ${statusColor}`} />
+                          <div>
+                            <p className="font-medium text-lg">
+                              {format(new Date(app.start_time), "HH:mm")} - {app.customer?.name || "Cliente sem nome"}
+                            </p>
+                            <div className="flex gap-2 text-sm text-muted-foreground">
+                              <span>{app.service.title}</span>
+                              {app.profile && (
+                                <>
+                                  <span>•</span>
+                                  <span>Dr(a). {app.profile.full_name}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-sm font-medium capitalize px-3 py-1 rounded-full bg-secondary text-secondary-foreground">
+                          {app.status === 'confirmed' ? 'Confirmado' : 
+                           app.status === 'scheduled' ? 'Agendado' : app.status}
+                        </div>
+                      </div>
+                    </AppointmentContextMenu>
+                  )
+                })
+              )}
+            </div>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   )
 }
