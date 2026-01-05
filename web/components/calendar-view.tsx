@@ -2,52 +2,54 @@
 
 import { useState, useEffect } from "react"
 import { 
-  format, 
-  startOfMonth, 
-  endOfMonth, 
-  startOfWeek, 
-  endOfWeek, 
-  eachDayOfInterval, 
-  isSameDay, 
-  addMonths, 
-  subMonths,
-  isValid 
+  format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, 
+  isSameMonth, isSameDay, addMonths, subMonths, addDays, subDays, 
+  isToday, parseISO, addWeeks, subWeeks
 } from "date-fns"
 import { ptBR } from "date-fns/locale"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
 import { CreateAppointmentDialog } from "@/components/create-appointment-dialog"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AppointmentContextMenu } from "./appointment-context-menu"
 import { STATUS_CONFIG } from "@/lib/appointment-config"
 
+// Tipo alinhado com o Banco de Dados e com segurança de nulos
 type Appointment = {
   id: string
   start_time: string
   end_time: string
-  status: string
-  customer: { name: string } | null
-  service: { title: string } | null
-  profile: { full_name: string } | null
+  status: string | null
+  customers: { name: string } | null
+  services: { title: string; color?: string } | null
 }
 
 type Props = {
-  appointments?: Appointment[]
+  appointments?: Appointment[] // Opcional para evitar crash
   customers?: any[]
   services?: any[]
   staff?: any[]
   organization_id: string
 }
 
+// Função auxiliar segura para pegar a hora
+const getRawHour = (dateString: string) => {
+  if (!dateString) return 0;
+  return new Date(dateString).getUTCHours();
+};
+
 export function CalendarView({ 
-  appointments = [], 
+  appointments = [], // Valor padrão: lista vazia para não quebrar
   customers = [], 
   services = [], 
   staff = [], 
   organization_id 
 }: Props) {
-  // Estado da data focada (Mês que estamos vendo)
-  const [currentDate, setCurrentDate] = useState<Date>(new Date())
+  const [date, setDate] = useState(new Date())
+  const [view, setView] = useState<'month' | 'week' | 'day'>('month')
+  
+  // --- BLINDAGEM CONTRA ERRO DE HIDRATAÇÃO ---
   const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
@@ -55,132 +57,230 @@ export function CalendarView({
   }, [])
 
   if (!isMounted) {
-    return <div className="p-8 text-center text-muted-foreground">Carregando calendário...</div>
+    return (
+      <div className="flex h-[600px] items-center justify-center border rounded-md bg-zinc-900">
+        <Loader2 className="h-8 w-8 animate-spin text-zinc-500" />
+      </div>
+    )
+  }
+  // ---------------------------------------------
+
+  function next() {
+    if (view === 'month') setDate(addMonths(date, 1))
+    else if (view === 'week') setDate(addWeeks(date, 1))
+    else setDate(addDays(date, 1))
   }
 
-  // --- LÓGICA DO GRID DO MÊS ---
-  // 1. Pega o primeiro dia da grade (pode ser do mês anterior para completar a semana)
-  const monthStart = startOfMonth(currentDate)
-  const monthEnd = endOfMonth(monthStart)
-  const startDate = startOfWeek(monthStart, { locale: ptBR })
-  const endDate = endOfWeek(monthEnd, { locale: ptBR })
-
-  // 2. Gera todos os dias que vão aparecer na tela
-  const calendarDays = eachDayOfInterval({
-    start: startDate,
-    end: endDate,
-  })
-
-  // 3. Dias da semana para o cabeçalho (Dom, Seg, Ter...)
-  const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
-
-  const safeAppointments = Array.isArray(appointments) ? appointments : []
-
-  function nextMonth() {
-    setCurrentDate(addMonths(currentDate, 1))
+  function previous() {
+    if (view === 'month') setDate(subMonths(date, 1))
+    else if (view === 'week') setDate(subWeeks(date, 1))
+    else setDate(subDays(date, 1))
   }
 
-  function prevMonth() {
-    setCurrentDate(subMonths(currentDate, 1))
+  function today() {
+    setDate(new Date())
+  }
+  
+  function AppointmentCard({ appointment }: { appointment: Appointment }) {
+    const status = appointment.status || 'scheduled'
+    const config = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG['scheduled']
+    // Proteção: usa optional chaining (?.) para não quebrar se services for null
+    const serviceColor = appointment.services?.color || '#3b82f6'
+    const isScheduled = status === 'scheduled'
+
+    return (
+      <AppointmentContextMenu appointmentId={appointment.id}>
+        <div 
+          className={cn(
+            "px-2 py-1 rounded border text-[10px] md:text-xs font-medium h-full flex flex-col justify-center gap-0.5 transition-all hover:brightness-110 shadow-sm overflow-hidden text-zinc-200 cursor-pointer",
+            !isScheduled && config.color
+          )}
+          style={isScheduled ? {
+            backgroundColor: `${serviceColor}15`,
+            borderLeft: `3px solid ${serviceColor}`,
+            borderTop: `1px solid ${serviceColor}30`,
+            borderRight: `1px solid ${serviceColor}30`,
+            borderBottom: `1px solid ${serviceColor}30`,
+          } : {}}
+        >
+          <div className="flex justify-between items-center w-full">
+            <span className="truncate font-bold max-w-[85%]">
+              {appointment.customers?.name || 'Sem nome'}
+            </span>
+            {!isScheduled && (
+              <config.icon className="h-3 w-3 shrink-0 opacity-80" />
+            )}
+          </div>
+          
+          <div className="flex justify-between items-center opacity-70 text-[10px]">
+            <span className="truncate max-w-[60%]">{appointment.services?.title || "Serviço"}</span>
+            <span>
+              {new Date(appointment.start_time).toLocaleTimeString('pt-BR', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                // Mantendo sua lógica de UTC se for assim que salva no banco
+                timeZone: 'UTC' 
+              })}
+            </span>
+          </div>
+        </div>
+      </AppointmentContextMenu>
+    )
   }
 
-  function jumpToToday() {
-    setCurrentDate(new Date())
+  function renderMonthView() {
+    const monthStart = startOfMonth(date)
+    const monthEnd = endOfMonth(monthStart)
+    const startDate = startOfWeek(monthStart)
+    const endDate = endOfWeek(monthEnd)
+
+    // Segurança: Garante que appointments é array
+    const safeAppointments = Array.isArray(appointments) ? appointments : []
+
+    const weeks = []
+    let days = []
+    let day = startDate
+
+    while (day <= endDate) {
+      for (let i = 0; i < 7; i++) {
+        days.push(day)
+        day = addDays(day, 1)
+      }
+      weeks.push(days)
+      days = []
+    }
+
+    return (
+      <div className="rounded-md border border-zinc-800 bg-zinc-900 overflow-hidden">
+        <div className="grid grid-cols-7 border-b border-zinc-800 bg-zinc-950/50">
+          {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((dayName) => (
+            <div key={dayName} className="py-2 text-center text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+              {dayName}
+            </div>
+          ))}
+        </div>
+        
+        <div className="grid grid-rows-5 md:grid-rows-6 h-[600px] md:h-[700px]">
+          {weeks.map((week, i) => (
+            <div key={i} className="grid grid-cols-7">
+              {week.map((day, j) => {
+                const dayAppointments = safeAppointments.filter(apt => 
+                  apt.start_time && isSameDay(parseISO(apt.start_time), day)
+                ).sort((a, b) => a.start_time.localeCompare(b.start_time))
+
+                return (
+                  <div 
+                    key={j} 
+                    className={cn(
+                      "border-r border-b border-zinc-800/50 p-1 md:p-2 min-h-[80px] relative hover:bg-zinc-800/30 transition-colors group flex flex-col gap-1",
+                      !isSameMonth(day, monthStart) && "bg-zinc-950/30 opacity-40",
+                      isToday(day) && "bg-zinc-900"
+                    )}
+                  >
+                    <span className={cn(
+                      "text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full mb-1",
+                      isToday(day) ? "bg-blue-600 text-white" : "text-zinc-400 group-hover:text-zinc-200"
+                    )}>
+                      {format(day, 'd')}
+                    </span>
+                    
+                    <div className="flex flex-col gap-1 overflow-y-auto max-h-[100px] no-scrollbar">
+                      {dayAppointments.map(apt => (
+                        <div key={apt.id} className="h-auto">
+                           <AppointmentCard appointment={apt} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  function renderDayView() {
+    const hours = Array.from({ length: 14 }, (_, i) => i + 7);
+    const safeAppointments = Array.isArray(appointments) ? appointments : []
+
+    return (
+      <div className="rounded-md border border-zinc-800 bg-zinc-900 overflow-hidden flex flex-col h-[700px]">
+        <div className="flex-1 overflow-y-auto">
+          {hours.map(hour => {
+            const hourAppointments = safeAppointments.filter(apt => {
+              if (!apt.start_time) return false;
+              const aptDate = new Date(apt.start_time);
+              return isSameDay(aptDate, date) && getRawHour(apt.start_time) === hour;
+            });
+
+            return (
+              <div key={hour} className="grid grid-cols-[60px_1fr] min-h-[100px] border-b border-zinc-800/50 group hover:bg-zinc-800/20">
+                <div className="border-r border-zinc-800/50 p-2 text-right">
+                  <span className="text-xs text-zinc-500 font-medium">
+                    {hour.toString().padStart(2, '0')}:00
+                  </span>
+                </div>
+                
+                <div className="p-1 md:p-2 relative flex gap-2 overflow-x-auto">
+                  {hourAppointments.map(apt => (
+                    <div key={apt.id} className="flex-1 min-w-[150px] max-w-[250px]">
+                      <AppointmentCard appointment={apt} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
   }
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader className="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0 pb-4">
-        
-        {/* Controles de Navegação */}
+    <div className="space-y-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="flex items-center bg-secondary rounded-md border">
-            <Button variant="ghost" size="icon" onClick={prevMonth} className="h-8 w-8">
+          <div className="flex items-center rounded-md border border-zinc-800 bg-zinc-900 p-1">
+            <Button variant="ghost" size="icon" onClick={previous} className="h-8 w-8 text-zinc-400">
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <div className="w-px h-4 bg-border" />
-            <Button variant="ghost" size="icon" onClick={nextMonth} className="h-8 w-8">
+            <Button variant="ghost" size="icon" onClick={today} className="h-8 w-8 text-zinc-400">
+              <CalendarIcon className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={next} className="h-8 w-8 text-zinc-400">
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-          <CardTitle className="text-xl font-bold capitalize">
-            {format(currentDate, "MMMM yyyy", { locale: ptBR })}
-          </CardTitle>
+          <h2 className="text-xl font-bold text-zinc-100 capitalize min-w-[200px]">
+            {view === 'day' 
+              ? format(date, "d 'de' MMMM", { locale: ptBR }) 
+              : format(date, 'MMMM yyyy', { locale: ptBR })}
+          </h2>
         </div>
 
-        {/* Botões da Direita */}
         <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={jumpToToday}>Hoje</Button>
-            <CreateAppointmentDialog 
-                customers={Array.isArray(customers) ? customers : []}
-                services={Array.isArray(services) ? services : []}
-                staff={Array.isArray(staff) ? staff : []}
-                organization_id={organization_id}
-            />
+          <Tabs value={view} onValueChange={(v) => setView(v as any)} className="w-[200px]">
+            <TabsList className="grid w-full grid-cols-3 bg-zinc-950">
+              <TabsTrigger value="month">Mês</TabsTrigger>
+              <TabsTrigger value="week" disabled className="opacity-50">Sem</TabsTrigger>
+              <TabsTrigger value="day">Dia</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <div className="h-6 w-px bg-zinc-800 mx-2 hidden md:block" />
+          
+          <CreateAppointmentDialog 
+            customers={Array.isArray(customers) ? customers : []} 
+            services={Array.isArray(services) ? services : []} 
+            staff={Array.isArray(staff) ? staff : []} 
+            organization_id={organization_id} 
+          />
         </div>
-      </CardHeader>
+      </div>
 
-      <CardContent className="p-0 flex-1 min-h-[600px]">
-        {/* Cabeçalho dos Dias da Semana */}
-        <div className="grid grid-cols-7 border-b bg-muted/40 text-center py-2 text-sm font-semibold text-muted-foreground">
-          {weekDays.map(day => (
-            <div key={day}>{day}</div>
-          ))}
-        </div>
-
-        {/* Grade de Dias */}
-        <div className="grid grid-cols-7 auto-rows-fr h-full">
-          {calendarDays.map((day, idx) => {
-            // Filtra agendamentos deste dia específico
-            const dayAppointments = safeAppointments.filter(app => {
-                const appTime = new Date(app.start_time)
-                return isValid(appTime) && isSameDay(appTime, day)
-            }).sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
-
-            const isCurrentMonth = day.getMonth() === currentDate.getMonth()
-            const isToday = isSameDay(day, new Date())
-
-            return (
-              <div 
-                key={day.toISOString()} 
-                className={`
-                  min-h-[100px] p-2 border-b border-r relative flex flex-col gap-1
-                  ${!isCurrentMonth ? 'bg-muted/20 text-muted-foreground' : 'bg-background'}
-                  ${idx % 7 === 0 ? 'border-l' : ''} /* Borda esquerda no domingo */
-                `}
-              >
-                {/* Número do Dia */}
-                <div className={`
-                  text-sm font-medium w-7 h-7 flex items-center justify-center rounded-full mb-1
-                  ${isToday ? 'bg-primary text-primary-foreground' : ''}
-                `}>
-                  {format(day, 'd')}
-                </div>
-
-                {/* Lista de Agendamentos do Dia (Chips) */}
-                <div className="flex flex-col gap-1 overflow-y-auto max-h-[120px]">
-                  {dayAppointments.map(app => {
-                    const statusColor = STATUS_CONFIG[app.status as keyof typeof STATUS_CONFIG] || "bg-gray-500"
-                    
-                    return (
-                        <AppointmentContextMenu key={app.id} appointmentId={app.id}>
-                          <div className={`
-                            text-xs p-1.5 rounded-md border shadow-sm cursor-pointer hover:opacity-80 transition-opacity truncate
-                            flex items-center gap-2 bg-card
-                          `}>
-                            <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${statusColor}`} />
-                            <span className="font-semibold">{format(new Date(app.start_time), "HH:mm")}</span>
-                            <span className="truncate">{app.customer?.name || "Sem nome"}</span>
-                          </div>
-                        </AppointmentContextMenu>
-                    )
-                  })}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </CardContent>
-    </Card>
+      {view === 'month' && renderMonthView()}
+      {view === 'day' && renderDayView()}
+    </div>
   )
 }
