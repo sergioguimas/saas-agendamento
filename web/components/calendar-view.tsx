@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Calendar } from "@/components/ui/calendar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { format, isSameDay } from "date-fns"
+import { format, isSameDay, isValid } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { CreateAppointmentDialog } from "@/components/create-appointment-dialog"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -16,12 +16,12 @@ type Appointment = {
   end_time: string
   status: string
   customer: { name: string } | null
-  service: { title: string }
+  service: { title: string } | null // <-- Importante: Pode ser null
   profile: { full_name: string } | null
 }
 
 type Props = {
-  appointments?: Appointment[] // Opcional para evitar crash se vier undefined
+  appointments?: Appointment[]
   customers?: any[]
   services?: any[]
   staff?: any[]
@@ -29,45 +29,42 @@ type Props = {
 }
 
 export function CalendarView({ 
-  appointments = [], // Valor padrão: lista vazia
+  appointments = [], 
   customers = [], 
   services = [], 
   staff = [], 
   organization_id 
 }: Props) {
-  // 1. Inicializa data
   const [date, setDate] = useState<Date>(new Date())
-  
-  // 2. Controle de montagem (Hydration)
   const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
     setIsMounted(true)
-  }, [])
+    // Debug: Mostra no console do navegador o que está chegando (Aperte F12 para ver)
+    console.log("Agendamentos recebidos:", appointments)
+  }, [appointments])
 
-  // Se não montou, esqueleto invisível
   if (!isMounted) {
-    return (
-      <div className="flex flex-col md:flex-row gap-6 opacity-0">
-         <div className="w-full md:w-auto h-fit">Loading...</div>
-      </div>
-    )
+    return <div className="p-8 text-center text-muted-foreground">Carregando agenda...</div>
   }
 
-  // 3. SEGURANÇA EXTRA: Garante que appointments seja um array antes de filtrar
   const safeAppointments = Array.isArray(appointments) ? appointments : []
 
   const dailyAppointments = safeAppointments
     .filter(app => {
       if (!date || !app.start_time) return false
       const appDate = new Date(app.start_time)
-      return isSameDay(appDate, date)
+      // Proteção: Só mostra se a data for válida
+      return isValid(appDate) && isSameDay(appDate, date)
     })
-    .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+    .sort((a, b) => {
+      const timeA = new Date(a.start_time).getTime() || 0
+      const timeB = new Date(b.start_time).getTime() || 0
+      return timeA - timeB
+    })
 
   return (
     <div className="flex flex-col md:flex-row gap-6">
-      {/* Coluna da Esquerda: Calendário */}
       <Card className="w-full md:w-auto h-fit">
         <CardContent className="p-0">
           <Calendar
@@ -80,14 +77,12 @@ export function CalendarView({
         </CardContent>
       </Card>
 
-      {/* Coluna da Direita: Lista de Agendamentos */}
       <Card className="flex-1">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle>
-            {format(date, "EEEE, d 'de' MMMM", { locale: ptBR })}
+            {isValid(date) ? format(date, "EEEE, d 'de' MMMM", { locale: ptBR }) : 'Data Inválida'}
           </CardTitle>
           <CreateAppointmentDialog 
-            // 4. SEGURANÇA EXTRA: Passa arrays vazios se for null/undefined
             customers={Array.isArray(customers) ? customers : []}
             services={Array.isArray(services) ? services : []}
             staff={Array.isArray(staff) ? staff : []}
@@ -109,6 +104,10 @@ export function CalendarView({
                 </p>
               ) : (
                 dailyAppointments.map((app) => {
+                  // Proteção contra falha no parse da data
+                  const startTime = new Date(app.start_time)
+                  if (!isValid(startTime)) return null 
+
                   const statusColor = STATUS_CONFIG[app.status as keyof typeof STATUS_CONFIG] || "bg-gray-500"
                   
                   return (
@@ -118,14 +117,15 @@ export function CalendarView({
                           <div className={`w-2 h-12 rounded-full ${statusColor}`} />
                           <div>
                             <p className="font-medium text-lg">
-                              {format(new Date(app.start_time), "HH:mm")} - {app.customer?.name || "Cliente sem nome"}
+                              {format(startTime, "HH:mm")} - {app.customer?.name || "Cliente sem nome"}
                             </p>
                             <div className="flex gap-2 text-sm text-muted-foreground">
-                              <span>{app.service.title}</span>
+                              {/* Proteção: Usa ?. para não quebrar se o serviço for null */}
+                              <span>{app.service?.title || "Serviço Indefinido"}</span>
                               {app.profile && (
                                 <>
                                   <span>•</span>
-                                  <span>Dr(a). {app.profile.full_name}</span>
+                                  <span>Dr(a). {app.profile?.full_name || ""}</span>
                                 </>
                               )}
                             </div>
