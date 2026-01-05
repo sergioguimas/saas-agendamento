@@ -6,34 +6,41 @@ const CONFIRMATION_KEYWORDS = ['sim', 'confirmar', 'confirmo', 'vou', 'comparece
 export async function POST(request: Request) {
   try {
     const payload = await request.json()
+    
+    // LOG DE DEBUG: Removemos isso depois, mas agora é crucial para ver o formato do voto
+    // console.log("🔍 Payload Recebido:", JSON.stringify(payload, null, 2))
+
     const eventType = payload.event
     
-    // 1. CORREÇÃO: Aceita tanto mensagem nova (UPSERT) quanto voto em enquete (UPDATE)
+    // 1. Filtro de Eventos
     if (eventType !== 'messages.upsert' && eventType !== 'messages.update') {
-      return NextResponse.json({ message: 'Ignored event' }, { status: 200 })
+      return NextResponse.json({ message: 'Ignored event type' }, { status: 200 })
     }
 
     const data = payload.data
-    // Em eventos UPDATE, as vezes o payload muda ligeiramente, garantimos pegar o objeto certo
     const messageData = data.message || data 
 
-    if (!messageData) return NextResponse.json({ message: 'No message content' }, { status: 200 })
+    // 2. Filtro de Grupos (NOVO)
+    // Se o remoteJid terminar em @g.us, é grupo. Ignoramos.
+    const remoteJid = data.key?.remoteJid || messageData.key?.remoteJid || ''
+    if (remoteJid.includes('@g.us')) {
+        return NextResponse.json({ message: 'Ignored group message' }, { status: 200 })
+    }
     
-    // Ignora atualizações que nós mesmos fizemos (ex: respondendo alguém)
+    // Ignora mensagens enviadas por nós mesmos
     if (data.key?.fromMe || messageData.key?.fromMe) {
         return NextResponse.json({ message: 'Ignored sent message' }, { status: 200 })
     }
 
-    // --- LÓGICA DE LEITURA (TEXTO OU VOTO) ---
+    // --- LÓGICA DE LEITURA ---
     let userResponse = ''
 
     // Caso A: Texto Simples
     if (messageData.conversation || messageData.extendedTextMessage?.text) {
       userResponse = messageData.conversation || messageData.extendedTextMessage?.text
     }
-    // Caso B: Voto em Enquete (Poll Update)
+    // Caso B: Voto em Enquete (Poll Update) - Padrão Evolution v2
     else if (messageData.pollUpdates) {
-       // Estrutura comum em eventos de UPDATE
        const votes = messageData.pollUpdates
        if (votes && votes.length > 0) {
            const vote = votes[0].vote
@@ -42,7 +49,7 @@ export async function POST(request: Request) {
            }
        }
     }
-    // Caso C: Voto em Enquete (Estrutura alternativa/Upsert)
+    // Caso C: Voto em Enquete (Estrutura alternativa)
     else if (messageData.pollUpdateMessage) {
         const vote = messageData.pollUpdateMessage.vote
         if (vote && vote.selectedOptions && vote.selectedOptions.length > 0) {
@@ -52,43 +59,40 @@ export async function POST(request: Request) {
 
     if (!userResponse) return NextResponse.json({ message: 'No readable content' }, { status: 200 })
 
-    // 2. Verifica se é confirmação
+    console.log(`📩 Processando resposta: "${userResponse}" de ${remoteJid}`)
+
+    // 3. Verifica Palavras-Chave
     const lowerText = userResponse.toLowerCase().trim()
     const isConfirmation = CONFIRMATION_KEYWORDS.some(keyword => lowerText.includes(keyword))
 
     if (!isConfirmation) {
-      console.log(`📝 Resposta recebida: "${userResponse}" (Não é confirmação)`)
       return NextResponse.json({ message: 'Not a confirmation' }, { status: 200 })
     }
 
-    // 3. Extrai telefone (Tenta pegar do key.remoteJid que está na raiz ou dentro da message)
-    const remoteJid = data.key?.remoteJid || messageData.key?.remoteJid
-    if (!remoteJid) return NextResponse.json({ message: 'No remoteJid found' }, { status: 200 })
-    
+    // 4. Busca e Atualiza
     const rawPhone = remoteJid.split('@')[0] 
     const phoneDigits = rawPhone.replace(/\D/g, '')
 
-    console.log(`📥 Confirmação detectada de: ${phoneDigits} (Opção: ${userResponse})`)
-
-    // 4. Atualiza no Banco (Igual ao anterior)
     const supabase = createAdminClient()
-    const searchPhone = phoneDigits.slice(-8) // Busca pelos últimos 8 dígitos para ser mais flexível com DDD
+    const searchPhone = phoneDigits.slice(-8) // Últimos 8 dígitos
     
-    const { data: customer, error: customerError } = await supabase
+    // Busca Cliente
+    const { data: customer } = await supabase
       .from('customers')
       .select('id, name')
       .ilike('phone', `%${searchPhone}%`) 
       .single()
 
-    if (customerError || !customer) {
-      console.log("❌ Cliente não encontrado. Buscado por:", searchPhone)
+    if (!customer) {
+      console.log(`❌ Cliente não encontrado (Phone: ${searchPhone})`)
       return NextResponse.json({ message: 'Customer not found' }, { status: 200 })
     }
 
+    // Busca Agendamento
     const now = new Date().toISOString()
-    const { data: appointment, error: appError } = await supabase
+    const { data: appointment } = await supabase
       .from('appointments')
-      .select('id, start_time')
+      .select('id')
       .eq('customer_id', customer.id)
       .eq('status', 'scheduled')
       .gte('start_time', now)
@@ -96,22 +100,18 @@ export async function POST(request: Request) {
       .limit(1)
       .single()
 
-    if (appError || !appointment) {
-      console.log("❌ Nenhum agendamento futuro pendente para:", customer.name)
+    if (!appointment) {
+      console.log(`❌ Sem agendamento futuro para ${customer.name}`)
       return NextResponse.json({ message: 'No pending appointment' }, { status: 200 })
     }
 
-    const { error: updateError } = await supabase
+    // Atualiza
+    await supabase
       .from('appointments')
       .update({ status: 'confirmed' })
       .eq('id', appointment.id)
 
-    if (updateError) {
-      console.error("Erro no Update:", updateError)
-      return NextResponse.json({ error: 'Update failed' }, { status: 500 })
-    }
-
-    console.log(`✅ SUCESSO! Agendamento de ${customer.name} confirmado.`)
+    console.log(`✅ Agendamento de ${customer.name} CONFIRMADO!`)
     return NextResponse.json({ success: true }, { status: 200 })
 
   } catch (error) {
