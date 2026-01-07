@@ -1,26 +1,29 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/utils/supabase/admin'
-import { addDays, format, parseISO, setHours, setMinutes } from 'date-fns'
+import { addDays, format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
-// Palavras-chave
+// --- CONFIGURAÇÕES ---
+// Substitua pela URL do seu NGROK (sem a barra no final)
+const EVOLUTION_API_URL = "https://heterodoxly-unchastened-nichole.ngrok-free.dev" 
+// Sua API Key (definida no arquivo .env ou a global da Evolution)
+const EVOLUTION_API_KEY = "medagenda123" 
+
 const CONFIRMATION_KEYWORDS = ['sim', 'confirmar', 'confirmo', 'vou', 'comparecer', 'ok', '👍', 'diga']
 const CANCELLATION_KEYWORDS = ['não', 'nao', 'cancelar', 'cancela', 'não vou', 'nao vou', 'remarcar', 'outro dia', 'imprevisto']
-
-// Horários de funcionamento para sugestão (Pode virar config no futuro)
-const WORKING_HOURS = [9, 10, 11, 14, 15, 16, 17]
+const WORKING_HOURS = [9, 10, 11, 14, 15, 16, 17] // Horários fixos de atendimento
 
 export async function POST(request: Request) {
   try {
     const payload = await request.json()
-    const { event, data, sender, server_url, apikey, instance } = payload
+    const { event, data, instance } = payload
     
-    // --- 1. Validação Básica ---
+    // 1. Validação
     if (event !== 'messages.upsert' && event !== 'messages.update') {
       return NextResponse.json({ message: 'Ignored event' }, { status: 200 })
     }
 
-    // --- 2. Extrair Telefone e Conteúdo ---
+    // 2. Identificação
     const messageData = data.message || data
     const key = data.key || messageData.key || {}
     const rawRemoteJid = key.remoteJidAlt || key.remoteJid || data.remoteJid || ''
@@ -32,7 +35,7 @@ export async function POST(request: Request) {
     const phoneDigits = rawRemoteJid.replace(/\D/g, '')
     const searchPhone = phoneDigits.slice(-8)
 
-    // Extrai o texto (seja digitado ou clique em botão)
+    // Extrai texto
     let content = ''
     if (messageData.conversation) content = messageData.conversation
     else if (messageData.extendedTextMessage?.text) content = messageData.extendedTextMessage.text
@@ -52,7 +55,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ message: 'Unknown command' }, { status: 200 })
     }
 
-    // --- 3. Buscar Cliente e Agendamento ---
+    // 3. Banco de Dados
     const supabase = createAdminClient()
 
     const { data: customer } = await supabase
@@ -64,7 +67,6 @@ export async function POST(request: Request) {
 
     if (!customer) return NextResponse.json({ message: 'Customer not found' }, { status: 200 })
 
-    // Janela de busca: últimas 24h até futuro infinito
     const yesterday = new Date()
     yesterday.setHours(yesterday.getHours() - 24)
 
@@ -80,73 +82,64 @@ export async function POST(request: Request) {
 
     if (!appointment) return NextResponse.json({ message: 'No appointment found' }, { status: 200 })
 
-    // --- CENÁRIO A: CONFIRMAÇÃO ---
+    // --- AÇÃO: CONFIRMAR ---
     if (isConfirmation) {
-        await supabase
-            .from('appointments')
-            .update({ status: 'confirmed' })
-            .eq('id', appointment.id)
-
-        console.log(`✅ Agendamento Confirmado: ${customer.name}`)
-        return NextResponse.json({ success: true, action: 'confirmed' }, { status: 200 })
+        await supabase.from('appointments').update({ status: 'confirmed' }).eq('id', appointment.id)
+        console.log(`✅ Confirmado: ${customer.name}`)
+        return NextResponse.json({ success: true }, { status: 200 })
     }
 
-    // --- CENÁRIO B: CANCELAMENTO E REAGENDAMENTO ---
+    // --- AÇÃO: CANCELAR E OFERECER HORÁRIOS ---
     if (isCancellation) {
-        // 1. Cancela no Banco
-        await supabase
-            .from('appointments')
-            .update({ status: 'canceled' })
-            .eq('id', appointment.id)
-        
-        console.log(`🚫 Agendamento Cancelado: ${customer.name}`)
+        // 1. Cancela
+        await supabase.from('appointments').update({ status: 'canceled' }).eq('id', appointment.id)
+        console.log(`🚫 Cancelado: ${customer.name}`)
 
-        // 2. Busca Próximos Horários Livres (Simplificado: Amanhã)
+        // 2. Busca Horários Livres Amanhã
         const tomorrow = addDays(new Date(), 1)
         const startOfDay = new Date(tomorrow.setHours(0,0,0,0)).toISOString()
         const endOfDay = new Date(tomorrow.setHours(23,59,59,999)).toISOString()
 
-        // Pega todos os agendamentos de amanhã para checar colisão
         const { data: busySlots } = await supabase
             .from('appointments')
             .select('start_time')
             .eq('organization_id', appointment.organization_id)
-            .neq('status', 'canceled')
+            .neq('status', 'canceled') // Ignora os cancelados
             .gte('start_time', startOfDay)
             .lte('start_time', endOfDay)
 
-        const busyTimes = new Set(busySlots?.map(a => new Date(a.start_time).getHours()))
+        const busyTimes = new Set(busySlots?.map(a => new Date(a.start_time).getHours())) // Pega só a HORA
 
-        // Filtra horários livres
+        // Filtra os slots fixos que não estão ocupados
         const freeSlots = WORKING_HOURS
             .filter(hour => !busyTimes.has(hour))
-            .slice(0, 3) // Pega só os 3 primeiros
+            .slice(0, 3) // Top 3 horários
             .map(hour => `${hour}:00`)
 
-        // 3. Monta a Mensagem de Resposta
+        // 3. Envia Mensagem
         const textMessage = `Poxa, que pena! 😕\n\nJá cancelei seu horário aqui.\n\nSe quiser remarcar para *amanhã (${format(tomorrow, 'dd/MM', { locale: ptBR })})*, tenho estes horários livres:\n\n${freeSlots.map(h => `▪️ ${h}`).join('\n')}\n\nResponda com o horário desejado ou me chame para ver outros dias!`
 
-        // 4. Envia via Evolution API
-        if (server_url && apikey) {
-            await fetch(`${server_url}/message/sendText/${instance}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'apikey': apikey
-                },
-                body: JSON.stringify({
-                    number: rawRemoteJid.replace('@s.whatsapp.net', ''), // Remove sufixo se tiver
-                    text: textMessage
-                })
+        // URL FIXA DO NGROK (Aqui estava o erro antes)
+        const apiUrl = `${EVOLUTION_API_URL}/message/sendText/${instance}`
+        
+        await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'apikey': EVOLUTION_API_KEY
+            },
+            body: JSON.stringify({
+                number: rawRemoteJid.replace('@s.whatsapp.net', ''),
+                text: textMessage
             })
-            console.log("📤 Oferta de reagendamento enviada.")
-        }
-
-        return NextResponse.json({ success: true, action: 'canceled_and_offered' }, { status: 200 })
+        })
+        
+        console.log("📤 Oferta enviada para:", apiUrl)
+        return NextResponse.json({ success: true }, { status: 200 })
     }
 
   } catch (error) {
-    console.error("❌ Erro no webhook:", error)
+    console.error("❌ Erro:", error)
     return NextResponse.json({ error: 'Internal Error' }, { status: 500 })
   }
 }
