@@ -20,11 +20,12 @@ export async function cancelAppointment(appointmentId: string) {
   }
 
   // 2. Se deu certo, avisa no WhatsApp
-  // (Não usamos 'await' aqui para não travar a interface do usuário esperando a mensagem ir)
   sendAppointmentCancellation(appointmentId).catch(err => 
     console.error("Falha ao enviar aviso de cancelamento:", err)
   )
 
   revalidatePath('/agendamentos')
+  revalidatePath('/dashboard')
+  revalidatePath('/')
   return { success: true }
 }

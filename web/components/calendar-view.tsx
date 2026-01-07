@@ -134,7 +134,6 @@ export function CalendarView({
     const startDate = startOfWeek(monthStart)
     const endDate = endOfWeek(monthEnd)
 
-    // Segurança: Garante que appointments é array
     const safeAppointments = Array.isArray(appointments) ? appointments : []
 
     const weeks = []
@@ -165,7 +164,9 @@ export function CalendarView({
             <div key={i} className="grid grid-cols-7">
               {week.map((day, j) => {
                 const dayAppointments = safeAppointments.filter(apt => 
-                  apt.start_time && isSameDay(parseISO(apt.start_time), day)
+                  apt.start_time &&
+                  isSameDay(parseISO(apt.start_time), day) &&
+                  apt.status !== 'canceled' && apt.status !== 'cancelled'
                 ).sort((a, b) => a.start_time.localeCompare(b.start_time))
 
                 return (
@@ -212,7 +213,7 @@ export function CalendarView({
             const hourAppointments = safeAppointments.filter(apt => {
               if (!apt.start_time) return false;
               const aptDate = new Date(apt.start_time);
-              return isSameDay(aptDate, date) && getRawHour(apt.start_time) === hour;
+              return isSameDay(aptDate, date) && getRawHour(apt.start_time) === hour && apt.status !== 'canceled' && apt.status !== 'cancelled';
             });
 
             return (
