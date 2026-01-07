@@ -14,6 +14,7 @@ import {
 import { AppointmentContextMenu } from "@/components/appointment-context-menu"
 import { cn } from "@/lib/utils"
 import { AppointmentCardActions } from "@/components/appointment-card-actions"
+import { RealtimeAppointments } from '@/components/realtime-appointments'
 
 // --- 1. FUNÇÃO DE CORREÇÃO DE DATA (BRASIL) ---
 function getBrazilDayRange() {
@@ -107,6 +108,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      <RealtimeAppointments />
       
       {/* Cabeçalho */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-border pb-6">

@@ -2,6 +2,7 @@ import { Metadata } from "next"
 import { createClient } from "@/utils/supabase/server"
 import { redirect } from "next/navigation"
 import { CalendarView } from "@/components/calendar-view"
+import { RealtimeAppointments } from "@/components/realtime-appointments"
 
 export const metadata: Metadata = {
   title: "Agenda | Eliza",
@@ -73,6 +74,7 @@ export default async function AgendamentosPage() {
 
   return (
     <div className="space-y-8">
+      <RealtimeAppointments />
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Agenda Médica</h1>
         <p className="text-muted-foreground text-sm">Visualize e gerencie os atendimentos.</p>
