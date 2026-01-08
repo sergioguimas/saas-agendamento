@@ -38,17 +38,17 @@ export default async function ClienteDetalhesPage({
     .eq('customer_id', id)
     .order('start_time', { ascending: false })
 
-  // 3. Busca Histórico (CORRIGIDO: Usando Alias para evitar ambiguidade)
+  // 3. Busca Histórico (Blindado com Alias)
   const { data: records } = await supabase
     .from('medical_records')
     .select('*, professional:profiles!professional_id(full_name)')
     .eq('customer_id', id)
     .order('created_at', { ascending: false })
 
-  // Cast para any para facilitar o acesso à propriedade 'professional' no map abaixo
+  // Cast para evitar erros de tipagem no map
   const safeRecords = records as any[] || []
 
-  const isActive = customer.active !== false // Default true se for null
+  const isActive = customer.active !== false
 
   // Helper para iniciais
   const getInitials = (name: string) => {
@@ -107,25 +107,27 @@ export default async function ClienteDetalhesPage({
 
       {/* --- CONTEÚDO --- */}
       <Tabs defaultValue="historico" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 lg:w-[400px] mb-8">
-          <TabsTrigger value="historico">Atendimentos</TabsTrigger>
-          <TabsTrigger value="agendamentos">Agendamentos</TabsTrigger>
-          <TabsTrigger value="dados">Perfil</TabsTrigger>
+        {/* AQUI: Mudamos para w-full e removemos a restrição de largura */}
+        <TabsList className="grid w-full grid-cols-3 mb-8 h-12">
+          <TabsTrigger value="historico" className="h-10">Atendimentos</TabsTrigger>
+          <TabsTrigger value="agendamentos" className="h-10">Agendamentos</TabsTrigger>
+          <TabsTrigger value="dados" className="h-10">Perfil</TabsTrigger>
         </TabsList>
 
         {/* ABA 1: HISTÓRICO */}
-        <TabsContent value="historico" className="space-y-8">
-            <div className="bg-muted/30 p-6 rounded-xl border border-dashed">
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-foreground">
+        <TabsContent value="historico" className="space-y-6">
+            {/* Removemos padding extra e borda tracejada para ficar mais limpo */}
+            <div className="bg-background rounded-xl">
+              <h2 className="text-lg font-semibold mb-3 flex items-center gap-2 text-foreground">
                 <FileText className="h-5 w-5 text-primary" />
                 Novo Registro
               </h2>
               <MedicalRecordForm customer_id={id} />
             </div>
 
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-muted-foreground pl-1">
-                Linha do Tempo
+            <div className="space-y-3">
+              <h2 className="text-lg font-semibold text-muted-foreground pl-1 mt-6">
+                Histórico
               </h2>
               
               {safeRecords.length > 0 ? (
@@ -134,18 +136,17 @@ export default async function ClienteDetalhesPage({
                     key={rec.id} 
                     customer_id={id} 
                     record={rec} 
-                    // CORRIGIDO: Acessando via 'professional' definido no alias
                     professionalName={rec.professional?.full_name || ""}
                   />
                 ))
               ) : (
-                <div className="flex flex-col items-center justify-center py-16 text-center border rounded-xl bg-muted/10">
+                <div className="flex flex-col items-center justify-center py-12 text-center border rounded-xl bg-muted/10">
                   <div className="bg-muted p-3 rounded-full mb-3">
                     <FileText className="h-6 w-6 text-muted-foreground" />
                   </div>
-                  <h3 className="text-lg font-medium">Nenhum registro encontrado</h3>
-                  <p className="text-sm text-muted-foreground max-w-sm mt-1">
-                    Use o formulário acima para criar a primeira anotação ou evolução deste cliente.
+                  <h3 className="text-base font-medium">Nenhum registro encontrado</h3>
+                  <p className="text-xs text-muted-foreground max-w-sm mt-1">
+                    Inicie o histórico deste cliente criando uma anotação acima.
                   </p>
                 </div>
               )}
@@ -157,39 +158,38 @@ export default async function ClienteDetalhesPage({
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1">
             {appointments && appointments.length > 0 ? (
               appointments.map((app) => (
-                <Card key={app.id} className="overflow-hidden hover:shadow-md transition-shadow duration-200 border-l-4" style={{ borderLeftColor: getStatusColorHex(app.status) }}>
-                  <CardContent className="p-5 flex items-center justify-between">
+                <Card key={app.id} className="overflow-hidden hover:shadow-sm transition-all duration-200 border-l-4" style={{ borderLeftColor: getStatusColorHex(app.status) }}>
+                  <CardContent className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="bg-muted p-2.5 rounded-lg">
-                        <Calendar className="h-5 w-5 text-foreground" />
+                      <div className="bg-muted p-2 rounded-md">
+                        <Calendar className="h-4 w-4 text-foreground" />
                       </div>
                       <div>
-                        <p className="font-semibold text-base">{app.services?.title || 'Serviço Personalizado'}</p>
-                        <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mt-1">
+                        <p className="font-semibold text-sm">{app.services?.title || 'Serviço Personalizado'}</p>
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-0.5">
                           <span className="flex items-center gap-1">
-                            <Calendar className="h-3.5 w-3.5" />
                             {new Date(app.start_time).toLocaleDateString('pt-BR')}
                           </span>
                           <span className="flex items-center gap-1">
-                            <Clock className="h-3.5 w-3.5" />
+                            <Clock className="h-3 w-3" />
                             {new Date(app.start_time).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}
                           </span>
                         </div>
                       </div>
                     </div>
-                    <Badge variant="secondary" className={`capitalize px-3 py-1 ${getStatusBadgeStyle(app.status)}`}>
+                    <Badge variant="secondary" className={`capitalize px-2 py-0.5 text-xs ${getStatusBadgeStyle(app.status)}`}>
                       {translateStatus(app.status)}
                     </Badge>
                   </CardContent>
                 </Card>
               ))
             ) : (
-              <div className="flex flex-col items-center justify-center py-16 text-center border rounded-xl bg-muted/10 col-span-full">
+              <div className="flex flex-col items-center justify-center py-12 text-center border rounded-xl bg-muted/10 col-span-full">
                 <div className="bg-muted p-3 rounded-full mb-3">
                   <Calendar className="h-6 w-6 text-muted-foreground" />
                 </div>
-                <h3 className="text-lg font-medium">Sem agendamentos</h3>
-                <p className="text-sm text-muted-foreground">Este cliente ainda não possui horários marcados.</p>
+                <h3 className="text-base font-medium">Sem agendamentos</h3>
+                <p className="text-xs text-muted-foreground">Este cliente ainda não possui horários marcados.</p>
               </div>
             )}
           </div>
@@ -198,54 +198,54 @@ export default async function ClienteDetalhesPage({
         {/* ABA 3: PERFIL */}
         <TabsContent value="dados">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5 text-primary" /> 
+            <CardHeader className="p-4 pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <User className="h-4 w-4 text-primary" /> 
                 Dados Cadastrais
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid gap-6 md:grid-cols-2">
-                <div className="space-y-2 p-4 rounded-lg bg-muted/20 border">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                    <Mail className="h-3.5 w-3.5" /> Email
+            <CardContent className="p-4 pt-2">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-1 p-3 rounded-lg bg-muted/20 border">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                    <Mail className="h-3 w-3" /> Email
                   </p>
-                  <p className="font-medium">{customer.email || "—"}</p>
+                  <p className="font-medium text-sm">{customer.email || "—"}</p>
                 </div>
                 
-                <div className="space-y-2 p-4 rounded-lg bg-muted/20 border">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                    <Phone className="h-3.5 w-3.5" /> Telefone
+                <div className="space-y-1 p-3 rounded-lg bg-muted/20 border">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                    <Phone className="h-3 w-3" /> Telefone
                   </p>
-                  <p className="font-medium">{customer.phone || "—"}</p>
+                  <p className="font-medium text-sm">{customer.phone || "—"}</p>
                 </div>
 
-                <div className="space-y-2 p-4 rounded-lg bg-muted/20 border">
-                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Documento (CPF/CNPJ)</p>
-                   <p className="font-medium">{customer.document || "—"}</p>
+                <div className="space-y-1 p-3 rounded-lg bg-muted/20 border">
+                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Documento</p>
+                   <p className="font-medium text-sm">{customer.document || "—"}</p>
                 </div>
 
-                 <div className="space-y-2 p-4 rounded-lg bg-muted/20 border">
-                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Data de Nascimento</p>
-                   <p className="font-medium">
+                 <div className="space-y-1 p-3 rounded-lg bg-muted/20 border">
+                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Nascimento</p>
+                   <p className="font-medium text-sm">
                     {customer.birth_date 
                       ? new Date(customer.birth_date).toLocaleDateString('pt-BR') 
                       : "—"}
                    </p>
                 </div>
                 
-                <div className="space-y-2 md:col-span-2 p-4 rounded-lg bg-muted/20 border">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                    <MapPin className="h-3.5 w-3.5" /> Endereço Completo
+                <div className="space-y-1 md:col-span-2 p-3 rounded-lg bg-muted/20 border">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                    <MapPin className="h-3 w-3" /> Endereço
                   </p>
-                  <p className="font-medium">{customer.address || "Endereço não cadastrado"}</p>
+                  <p className="font-medium text-sm">{customer.address || "Endereço não cadastrado"}</p>
                 </div>
 
-                <div className="space-y-2 md:col-span-2 p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-                   <p className="text-xs font-medium text-yellow-600 uppercase tracking-wider flex items-center gap-2">
-                      <ShieldAlert className="h-3.5 w-3.5" /> Observações Internas
+                <div className="space-y-1 md:col-span-2 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                   <p className="text-[10px] font-bold text-yellow-600 uppercase tracking-wider flex items-center gap-2">
+                      <ShieldAlert className="h-3 w-3" /> Observações Internas
                    </p>
-                   <p className="text-sm text-yellow-700 mt-1">
+                   <p className="text-xs text-yellow-700 mt-1">
                       {customer.notes || "Nenhuma observação interna."}
                    </p>
                 </div>
@@ -262,24 +262,24 @@ export default async function ClienteDetalhesPage({
 // --- Helpers Visuais ---
 
 function getStatusColorHex(status: string | null) {
-  if (!status) return '#94a3b8' // Slate 400
+  if (!status) return '#94a3b8' 
   switch (status) {
-    case 'confirmed': return '#22c55e' // Green 500
-    case 'canceled': return '#ef4444' // Red 500
-    case 'completed': return '#3b82f6' // Blue 500
-    case 'arrived': return '#6366f1' // Indigo 500
-    default: return '#eab308' // Yellow 500
+    case 'confirmed': return '#22c55e'
+    case 'canceled': return '#ef4444'
+    case 'completed': return '#3b82f6'
+    case 'arrived': return '#6366f1'
+    default: return '#eab308' 
   }
 }
 
 function getStatusBadgeStyle(status: string | null) {
   if (!status) return 'bg-slate-100 text-slate-700'
   switch (status) {
-    case 'confirmed': return 'bg-green-100 text-green-700 hover:bg-green-100'
-    case 'canceled': return 'bg-red-100 text-red-700 hover:bg-red-100'
-    case 'completed': return 'bg-blue-100 text-blue-700 hover:bg-blue-100'
-    case 'arrived': return 'bg-indigo-100 text-indigo-700 hover:bg-indigo-100'
-    default: return 'bg-yellow-100 text-yellow-700 hover:bg-yellow-100'
+    case 'confirmed': return 'bg-green-100 text-green-700'
+    case 'canceled': return 'bg-red-100 text-red-700'
+    case 'completed': return 'bg-blue-100 text-blue-700'
+    case 'arrived': return 'bg-indigo-100 text-indigo-700'
+    default: return 'bg-yellow-100 text-yellow-700'
   }
 }
 
