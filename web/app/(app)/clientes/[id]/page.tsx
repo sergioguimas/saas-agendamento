@@ -52,7 +52,7 @@ export default async function ClienteDetalhesPage({
 
   // Helper para iniciais
   const getInitials = (name: string) => {
-    return name
+    return (name || "Cliente")
       .split(' ')
       .map(n => n[0])
       .slice(0, 2)
@@ -75,7 +75,7 @@ export default async function ClienteDetalhesPage({
           <div className="flex items-center gap-5">
             <Avatar className="h-20 w-20 border-2 border-background shadow-sm">
               <AvatarFallback className="text-2xl bg-primary/10 text-primary font-bold">
-                {getInitials(customer.name)}
+                {getInitials(customer.name || " ")}
               </AvatarFallback>
             </Avatar>
             

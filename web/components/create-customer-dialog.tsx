@@ -1,9 +1,6 @@
 'use client'
 
-import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import {
   Dialog,
   DialogContent,
@@ -13,94 +10,88 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { UserPlus, Loader2, Phone, CreditCard } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { PlusCircle, Loader2 } from "lucide-react"
+import { useState, useTransition } from "react"
+import { createCustomer } from "@/app/actions/create-customer"
 import { toast } from "sonner"
-import { upsertCustomer } from "@/app/actions/create-customer"
 
-type Props = {
-  organization_id: string
-}
-
-export function CreateCustomerDialog({ organization_id }: Props) {
+export function CreateCustomerDialog() {
   const [open, setOpen] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [isPending, startTransition] = useTransition()
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setLoading(true)
-    
-    const formData = new FormData(event.currentTarget)
-    // O organization_id é passado via Prop do Servidor para o Cliente e incluído no formulário
-    formData.append('organization_id', organization_id)
-
-    const result = await upsertCustomer(formData)
-
-    if (result.error) {
-      toast.error(result.error)
-      setLoading(false)
-    } else {
-      toast.success("Paciente cadastrado com sucesso!")
-      setLoading(false)
-      setOpen(false)
-    }
+  async function handleSubmit(formData: FormData) {
+    startTransition(async () => {
+      const result = await createCustomer(formData)
+      if (result.success) {
+        toast.success("Cliente cadastrado com sucesso!")
+        setOpen(false)
+      } else {
+        toast.error("Erro ao cadastrar cliente.")
+      }
+    })
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-blue-600 hover:bg-blue-700">
-          <UserPlus className="mr-2 h-4 w-4" /> Novo Paciente
+        <Button>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Novo Paciente
         </Button>
       </DialogTrigger>
-      <DialogContent className="bg-background border-border text-foreground sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Cadastrar Paciente</DialogTitle>
-          <DialogDescription className="text-zinc-400">
-            Preencha os dados básicos para iniciar o prontuário.
+          <DialogTitle>Novo Paciente</DialogTitle>
+          <DialogDescription>
+            Preencha os dados completos para o prontuário.
           </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="name">Nome Completo</Label>
-            <Input 
-              id="name" 
-              name="name" 
-              placeholder="Ex: João da Silva" 
-              required 
-              className="bg-zinc-950 border-border" 
-            />
-          </div>
+        <form action={handleSubmit} className="space-y-4 py-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2 col-span-2">
+                <Label htmlFor="name">Nome Completo *</Label>
+                <Input id="name" name="name" required placeholder="Ex: Maria Silva" />
+            </div>
+            
+            <div className="space-y-2">
+                <Label htmlFor="phone">WhatsApp *</Label>
+                <Input id="phone" name="phone" required placeholder="Ex: 11999999999" />
+            </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="phone">Telefone / WhatsApp</Label>
-            <div className="relative">
-              <Phone className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
-              <Input 
-                id="phone" 
-                name="phone" 
-                placeholder="(11) 99999-9999" 
-                className="bg-zinc-950 border-border pl-9" 
-              />
+            <div className="space-y-2">
+                <Label htmlFor="birth_date">Data de Nascimento</Label>
+                <Input id="birth_date" name="birth_date" type="date" />
+            </div>
+
+            <div className="space-y-2 col-span-2">
+                <Label htmlFor="email">E-mail</Label>
+                <Input id="email" name="email" type="email" placeholder="cliente@email.com" />
+            </div>
+
+            <div className="space-y-2">
+                <Label htmlFor="document">CPF</Label>
+                <Input id="document" name="document" placeholder="000.000.000-00" />
             </div>
           </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="document">CPF ou Documento</Label>
-            <div className="relative">
-              <CreditCard className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
-              <Input 
-                id="document" 
-                name="document" 
-                placeholder="000.000.000-00" 
-                className="bg-zinc-950 border-border pl-9" 
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="address">Endereço Completo</Label>
+            <Textarea id="address" name="address" placeholder="Rua, Número, Bairro, Cidade..." rows={2} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="notes">Observações Internas</Label>
+            <Textarea id="notes" name="notes" placeholder="Alergias, preferências, histórico..." rows={2} />
           </div>
 
           <DialogFooter>
-            <Button type="submit" disabled={loading} className="bg-blue-600 hover:bg-blue-700 w-full mt-2">
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Salvar Paciente'}
+            <Button type="submit" disabled={isPending}>
+              {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Cadastrar
             </Button>
           </DialogFooter>
         </form>
