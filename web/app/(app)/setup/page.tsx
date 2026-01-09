@@ -1,55 +1,46 @@
 import { createClient } from "@/utils/supabase/server"
 import { redirect } from "next/navigation"
-import { SettingsForm } from "../configuracoes/settings-form" // Verifique se o caminho de importação está correto para sua estrutura
+import { SettingsForm } from "../configuracoes/settings-form"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default async function SetupPage() {
   const supabase = await createClient()
 
+  // 1. Busca Usuário
   const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return redirect("/login")
 
-  if (!user) {
-    return redirect("/login")
-  }
-
-  // 1. Busca Profile e Organização
+  // 2. Busca Perfil
   const { data: profile } = await supabase
-    .from("profiles")
-    .select("*, organizations(*)")
-    .eq("id", user.id)
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
     .single()
 
-  if (!profile) {
-    return redirect("/login")
-  }
-
-  // 2. Busca os Templates (Nova exigência do formulário)
-  // Se a organização não existir ainda, retorna array vazio
-  let templates: any[] = []
-  
-  if (profile.organization_id) {
+  // 3. Busca Organização (se existir)
+  let organization = null
+  if (profile?.organization_id) {
     const { data } = await supabase
-      .from('message_templates')
+      .from('organizations')
       .select('*')
-      .eq('organization_id', profile.organization_id)
-    
-    if (data) templates = data
+      .eq('id', profile.organization_id)
+      .single()
+    organization = data
   }
-
+  
   return (
-    <div className="container max-w-4xl py-10">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Bem-vindo ao MedAgenda</h1>
+    <div className="container max-w-3xl py-10 space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Configuração Inicial</h1>
         <p className="text-muted-foreground">
-          Vamos configurar os dados da sua clínica para começar.
+          Complete os dados da sua clínica para começar a usar o sistema.
         </p>
       </div>
-      
-      {/* Agora passamos todas as propriedades que o SettingsForm exige */}
-      <SettingsForm 
-        profile={profile} 
-        organization={profile.organizations} 
-        templates={templates} 
-      />
+
+      <div className="grid gap-6">
+        {/* Passamos apenas profile e organization. O form já sabe lidar sem templates. */}
+        <SettingsForm profile={profile} organization={organization} />
+      </div>
     </div>
   )
 }

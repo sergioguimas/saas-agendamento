@@ -1,139 +1,76 @@
 'use client'
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, QrCode, CheckCircle2, RefreshCw, Smartphone } from "lucide-react"
-import { createWhatsappInstance } from "@/app/actions/whatsapp-connect"
-import { toast } from "sonner"
-import { WhatsappTestButton } from "@/components/whatsapp-test-button"
+import { QrCode, Link, AlertCircle } from "lucide-react"
 
 interface WhatsappSettingsProps {
-  initialStatus?: string | null
+  organization: any
 }
 
-export function WhatsappSettings({ initialStatus }: WhatsappSettingsProps) {
-  const [loading, setLoading] = useState(false)
-  const [qrCode, setQrCode] = useState<string | null>(null)
-  const [isConnected, setIsConnected] = useState(initialStatus === 'connected')
-
-  // Sincroniza o estado local se o status mudar no servidor (via Webhook/Refresh)
-  useEffect(() => {
-    if (initialStatus === 'connected') {
-      setIsConnected(true)
-      setQrCode(null)
-    } else if (initialStatus === 'disconnected') {
-      setIsConnected(false)
-    }
-  }, [initialStatus])
-
-  async function handleConnect() {
-    setLoading(true)
-    setQrCode(null)
-    
-    try {
-      const result = await createWhatsappInstance()
-
-      // 1. Verificamos primeiro se existe um erro retornado
-      if ('error' in result && result.error) {
-        toast.error(result.error)
-        return
-      }
-
-      // 2. Usamos a asserção 'as any' ou verificamos as propriedades específicas
-      const data = result as any 
-
-      if (data.connected) {
-        setIsConnected(true)
-        setQrCode(null)
-        toast.success("WhatsApp conectado com sucesso!")
-      } else if (data.qrcode) {
-        setQrCode(data.qrcode)
-        toast.info("Escaneie o QR Code para conectar.")
-      }
-    } catch (error) {
-      toast.error("Erro ao tentar conectar com a Evolution API.")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Função para resetar a visão caso a conexão trave
-  function handleReset() {
-    setQrCode(null)
-    setIsConnected(false)
-  }
+export function WhatsappSettings({ organization }: WhatsappSettingsProps) {
+  
+  const instanceName = organization?.slug || "Sem instância"
+  const isConnected = false // Por enquanto deixamos fixo, depois conectamos com a API real
 
   return (
-    <Card className="bg-background border-border overflow-hidden">
-      <CardHeader className="border-b border-border bg-background/50">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${isConnected ? 'bg-emerald-500/10' : 'bg-blue-500/10'}`}>
-              <Smartphone className={`h-5 w-5 ${isConnected ? 'text-emerald-500' : 'text-blue-500'}`} />
-            </div>
-            <div>
-              <CardTitle className="text-foreground">Integração WhatsApp</CardTitle>
-              <CardDescription className="text-zinc-400">
-                Conecte o WhatsApp da clínica para enviar confirmações automáticas.
-              </CardDescription>
-            </div>
-          </div>
-          <Badge variant={isConnected ? "default" : "secondary"} className={isConnected ? "bg-emerald-600 hover:bg-emerald-600" : "bg-zinc-800"}>
-            {isConnected ? "Conectado" : "Desconectado"}
-          </Badge>
-        </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+            <span>Conexão WhatsApp (Evolution API)</span>
+            <Badge variant={isConnected ? "default" : "destructive"}>
+                {isConnected ? "Conectado" : "Desconectado"}
+            </Badge>
+        </CardTitle>
+        <CardDescription>
+          Configurações da instância <strong>{instanceName}</strong>.
+        </CardDescription>
       </CardHeader>
+      <CardContent className="space-y-4">
+        
+        <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+                <Label>Evolution API URL</Label>
+                <Input 
+                    name="evolution_url" 
+                    defaultValue={organization?.evolution_api_url || ''} 
+                    placeholder="Ex: https://api.meusite.com" 
+                />
+            </div>
+            <div className="space-y-2">
+                <Label>API Key (Global)</Label>
+                <Input 
+                    name="evolution_apikey" 
+                    type="password"
+                    defaultValue={organization?.evolution_api_key || ''} 
+                    placeholder="Sua chave de API" 
+                />
+            </div>
+        </div>
 
-      <CardContent className="pt-6 flex flex-col items-center justify-center min-h-[240px] space-y-4">
-        {loading ? (
-          <div className="flex flex-col items-center gap-3">
-            <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
-            <p className="text-sm text-zinc-400">Comunicando com a Evolution API...</p>
-          </div>
-        ) : isConnected ? (
-          <div className="flex flex-col items-center gap-4 text-center">
-            <div className="h-20 w-20 rounded-full bg-emerald-500/10 flex items-center justify-center">
-              <CheckCircle2 className="h-12 w-12 text-emerald-500" />
-            </div>
+        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-4 rounded-md flex items-start gap-3 text-sm">
+            <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
             <div>
-              <h3 className="text-foreground font-medium">Conexão Ativa</h3>
-              <p className="text-sm text-zinc-400 max-w-[280px]">
-                Sua instância está pronta para enviar mensagens automáticas.
-              </p>
+                <p className="font-bold">Atenção:</p>
+                <p>Certifique-se de que a instância <strong>{instanceName}</strong> já foi criada no seu painel da Evolution API.</p>
             </div>
-            <Button variant="outline" size="sm" onClick={handleConnect} className="border-border text-zinc-400 hover:text-foreground">
-              <RefreshCw className="h-4 w-4 mr-2" /> Atualizar Status
+        </div>
+
+        <div className="pt-2 flex gap-2">
+            <Button variant="outline" type="button" disabled>
+                <QrCode className="mr-2 h-4 w-4" />
+                Ler QR Code
             </Button>
-          </div>
-        ) : qrCode ? (
-          <div className="flex flex-col items-center gap-4">
-            <div className="bg-white p-4 rounded-xl">
-              <img src={qrCode} alt="WhatsApp QR Code" className="w-48 h-48" />
-            </div>
-            <p className="text-sm text-zinc-400 text-center max-w-[250px]">
-              Abra o WhatsApp {'>'} Aparelhos Conectados {'>'} Conectar um Aparelho.
-            </p>
-            <Button variant="ghost" size="sm" onClick={handleReset} className="text-zinc-500 hover:text-zinc-300">
-              Cancelar e tentar novamente
+            <Button variant="outline" type="button" disabled>
+                <Link className="mr-2 h-4 w-4" />
+                Testar Conexão
             </Button>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-6 py-4">
-            <p className="text-sm text-zinc-400 text-center max-w-[300px]">
-              O sistema irá gerar uma instância exclusiva para sua clínica dentro da Evolution API.
-            </p>
-            <Button onClick={handleConnect} className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 h-12 px-8">
-              <QrCode className="h-5 w-5" /> Gerar QR Code
-            </Button>
-            <button type="button" onClick={handleReset} className="text-xs text-zinc-600 hover:text-zinc-400 underline">
-              Resetar conexão travada
-            </button>
-          </div>
-        )}
+        </div>
+
       </CardContent>
-      <WhatsappTestButton />
     </Card>
   )
 }

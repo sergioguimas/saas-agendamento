@@ -6,7 +6,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Checkbox } from "@/components/ui/checkbox"
-// AQUI: Importamos a nova ação separada
 import { updatePreferences } from "@/app/actions/update-preferences"
 import { MessageSquare, Clock, Save, Info } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
