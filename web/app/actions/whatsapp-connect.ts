@@ -2,15 +2,25 @@
 
 import { createClient } from "@/utils/supabase/server"
 
-// Configurações Padrão
-const DEFAULT_EVOLUTION_URL = process.env.NEXT_PUBLIC_EVOLUTION_API_URL || "http://127.0.0.1:8082"
-const GLOBAL_API_KEY = process.env.EVOLUTION_API_KEY || "medagenda123"
+// --- TIPO PADRONIZADO PARA PARAR O ERRO DO TS ---
+export type WhatsappResponse = {
+  success?: boolean
+  error?: string
+  qrcode?: string
+  connected?: boolean
+  status?: string
+}
+
+// Fallbacks de segurança
+const DEFAULT_EVOLUTION_URL = process.env.NEXT_PUBLIC_EVOLUTION_API_URL
+const GLOBAL_API_KEY = process.env.EVOLUTION_API_KEY
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
-export async function createWhatsappInstance() {
+export async function createWhatsappInstance(): Promise<WhatsappResponse> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  
   if (!user) return { error: "Usuário não autenticado" }
 
   // 1. Busca dados da Organização
@@ -21,28 +31,24 @@ export async function createWhatsappInstance() {
     .single() as any
 
   if (!profile?.organization_id || !profile?.organizations?.slug) {
-    return { error: "Organização não encontrada ou Slug vazio." }
+    return { error: "Organização não encontrada." }
   }
 
   const instanceName = profile.organizations.slug
-  const organizationId = profile.organization_id
-  
   const EVOLUTION_URL = profile.organizations.evolution_api_url || DEFAULT_EVOLUTION_URL
   const API_KEY = profile.organizations.evolution_api_key || GLOBAL_API_KEY
+
+  if (!EVOLUTION_URL) return { error: "URL da API não configurada." }
   
-  console.log(`🔌 Verificando instância: ${instanceName} em ${EVOLUTION_URL}`)
+  console.log(`🔌 Conectando instância: ${instanceName}`)
 
   try {
     // 2. Tenta CRIAR a instância
     const createResponse = await fetch(`${EVOLUTION_URL}/instance/create`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'apikey': API_KEY
-        },
+        headers: { 'Content-Type': 'application/json', 'apikey': API_KEY! },
         body: JSON.stringify({
             instanceName: instanceName,
-            token: instanceName,
             qrcode: true,
             integration: "WHATSAPP-BAILEYS"
         })
@@ -50,61 +56,35 @@ export async function createWhatsappInstance() {
 
     const createData = await createResponse.json()
     
-    // === CORREÇÃO AQUI: Detecção robusta de "Já Existe" ===
+    // Detecção robusta se "Já Existe"
     let isAlreadyExists = false
-    
-    // Verifica se a mensagem de erro contém "already in use" ou "already exists"
-    // Funciona para texto simples OU array de mensagens
     const msg = JSON.stringify(createData).toLowerCase()
     if (msg.includes("already in use") || msg.includes("already exists")) {
       isAlreadyExists = true
     }
 
-    // Se deu erro E NÃO É porque já existe, aí sim paramos
     if (!createResponse.ok && !isAlreadyExists) {
+        // Se deu erro real (não é apenas duplicidade)
         console.error("Erro Evolution:", createData)
-        return { error: `Erro na API: ${JSON.stringify(createData.response || createData)}` }
-    }
-    // =======================================================
-
-    // 3. Limpa referência antiga no banco (se houver duplicidade local)
-    await supabase.from('whatsapp_instances')
-        .delete()
-        .eq('organization_id', organizationId)
-
-    // 4. Se já existia, garante que as configurações estão certas
-    if (isAlreadyExists) {
-       await updateInstanceSettings(instanceName, EVOLUTION_URL, API_KEY)
+        return { error: "Erro ao criar instância na API." }
     }
 
-    // 5. Busca Status / QR Code
-    // Se já estiver conectado, essa função vai detectar e retornar connected: true
-    const result = await fetchQrCodeLoop(instanceName, EVOLUTION_URL, API_KEY)
-
-    // 6. Atualiza o Banco de Dados com o Status Real
-    if (result.qrcode || result.connected) {
-      const { error: dbError } = await supabase.from('whatsapp_instances').insert({
-        organization_id: organizationId,
-        name: instanceName,
-        status: result.connected ? 'connected' : 'pending',
-        qr_code: result.qrcode || null,
-        updated_at: new Date().toISOString()
-      })
-      
-      if (dbError) console.error("Erro ao salvar no banco:", dbError)
-    }
+    // 3. Se já existe ou acabou de criar, busca o QR Code
+    // Usamos o seu loop inteligente aqui
+    const result = await fetchQrCodeLoop(instanceName, EVOLUTION_URL, API_KEY!)
 
     return result
 
   } catch (error: any) {
-    console.error("❌ Erro Crítico de Conexão:", error)
+    console.error("❌ Erro Crítico:", error)
     return { error: `Falha de conexão: ${error.message}` }
   }
 }
 
-async function fetchQrCodeLoop(instanceName: string, url: string, apiKey: string) {
+// Função Auxiliar de Loop
+async function fetchQrCodeLoop(instanceName: string, url: string, apiKey: string): Promise<WhatsappResponse> {
     let attempts = 0
-    const maxAttempts = 5 
+    const maxAttempts = 10 
 
     while (attempts < maxAttempts) {
         attempts++
@@ -116,47 +96,27 @@ async function fetchQrCodeLoop(instanceName: string, url: string, apiKey: string
             
             const data = await response.json()
 
-            // Caso 1: Retorna QR Code
+            // Caso 1: Retorna QR Code (Base64)
             if (data.base64 || data.qrcode?.base64) { 
                 return { success: true, qrcode: data.base64 || data.qrcode?.base64 }
             }
             
-            // Caso 2: Já conectado (Evolution retorna isso de várias formas dependendo da versão)
+            // Caso 2: Já conectado
             const state = data.instance?.state || data.instance?.status
             if (state === 'open' || state === 'connected') {
                 return { success: true, connected: true }
             }
             
-            await delay(1000)
+            await delay(1500) 
         } catch (e) {
             await delay(1000)
         }
     }
-    return { error: "Não foi possível obter o status. Tente atualizar a página." }
+    return { error: "Tempo esgotado. Tente clicar novamente." }
 }
 
-async function updateInstanceSettings(instanceName: string, url: string, apiKey: string) {
-    try {
-        await fetch(`${url}/instance/settings/${instanceName}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': apiKey
-            },
-            body: JSON.stringify({
-                "reject_call": true,
-                "groupsIgnore": true,
-                "alwaysOnline": true, 
-                "readMessages": false,
-                "readStatus": false
-            })
-        })
-    } catch (error) {
-        // Ignora erro de settings, não é crítico
-    }
-}
-
-export async function deleteWhatsappInstance() {
+// 4. Função para Desconectar
+export async function deleteWhatsappInstance(): Promise<WhatsappResponse> {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: "Auth required" }
@@ -171,17 +131,51 @@ export async function deleteWhatsappInstance() {
     const EVOLUTION_URL = profile?.organizations?.evolution_api_url || DEFAULT_EVOLUTION_URL
     const API_KEY = profile?.organizations?.evolution_api_key || GLOBAL_API_KEY
     
-    if(instanceName) {
+    if(instanceName && EVOLUTION_URL) {
         try {
-            await fetch(`${EVOLUTION_URL}/instance/delete/${instanceName}`, {
-                method: 'DELETE', headers: { 'apikey': API_KEY }
-            })
             await fetch(`${EVOLUTION_URL}/instance/logout/${instanceName}`, {
-                method: 'DELETE', headers: { 'apikey': API_KEY }
+                method: 'DELETE', headers: { 'apikey': API_KEY! }
             })
-        } catch (e) { console.error("Erro ao deletar na API") }
-
-        await supabase.from('whatsapp_instances').delete().eq('name', instanceName)
+            return { success: true }
+        } catch (e) { 
+            return { error: "Erro ao desconectar" }
+        }
     }
-    return { success: true }
+    return { error: "Dados inválidos" }
+}
+
+// 5. Verifica Status (Para rodar ao carregar a página)
+export async function getWhatsappStatus(): Promise<WhatsappResponse> {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { status: 'unknown' }
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('organizations(slug, evolution_api_url, evolution_api_key)')
+        .eq('id', user.id)
+        .single() as any
+    
+    const org = profile?.organizations
+    if (!org) return { status: 'unknown' }
+
+    const instanceName = org.slug
+    const EVOLUTION_URL = org.evolution_api_url || DEFAULT_EVOLUTION_URL
+    const API_KEY = org.evolution_api_key || GLOBAL_API_KEY
+
+    try {
+        const response = await fetch(`${EVOLUTION_URL}/instance/connectionState/${instanceName}`, {
+            method: 'GET',
+            headers: { 'apikey': API_KEY! },
+            cache: 'no-store'
+        })
+        
+        if(response.status === 404) return { status: 'disconnected' } 
+        
+        const data = await response.json()
+        const state = data.instance?.state || 'disconnected'
+        return { status: state === 'open' ? 'connected' : 'disconnected' }
+    } catch (e) {
+        return { status: 'error' }
+    }
 }
