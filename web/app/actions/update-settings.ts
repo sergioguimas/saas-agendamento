@@ -13,66 +13,82 @@ export async function updateSettings(formData: FormData) {
   let orgId = formData.get('org_id') as string
   if (orgId === 'undefined' || orgId === 'null') orgId = ''
 
-  // Dados capturados
-  const orgData = {
-    name: formData.get('name') as string,
-    document: formData.get('document') as string,
-    phone: formData.get('phone') as string,
-    email: formData.get('email') as string,
-    address: formData.get('address') as string,
-    evolution_api_url: formData.get('evolution_url') as string,
-    evolution_api_key: formData.get('evolution_apikey') as string,
-  }
-
-  const profileData = {
-    full_name: formData.get('full_name') as string,
-    crm: formData.get('crm') as string,
-  }
-
   try {
     // === CENÁRIO 1: CRIAR NOVA CLÍNICA (Primeiro Acesso) ===
-    if (!orgId && orgData.name) {
-      // Chamamos a função SQL "Super Poderosa" que criamos
+    const orgName = formData.get('name') as string
+    
+    if (!orgId && orgName) {
       const { data: newId, error: rpcError } = await supabase.rpc('create_new_organization' as any, {
-        org_name: orgData.name,
-        org_document: orgData.document,
-        org_phone: orgData.phone,
-        org_email: orgData.email,
-        org_address: orgData.address,
-        org_evolution_url: orgData.evolution_api_url,
-        org_evolution_key: orgData.evolution_api_key
+        org_name: orgName,
+        org_document: formData.get('document') as string,
+        org_phone: formData.get('phone') as string,
+        org_email: formData.get('email') as string,
+        org_address: formData.get('address') as string,
+        org_evolution_url: formData.get('evolution_url') as string,
+        org_evolution_key: formData.get('evolution_apikey') as string
       })
 
       if (rpcError) {
         console.error('Erro RPC Create:', rpcError)
         return { error: 'Erro ao criar organização: ' + rpcError.message }
       }
-      
-      // O ID já vem vinculado do banco
       orgId = newId
     } 
-    // === CENÁRIO 2: ATUALIZAR CLÍNICA EXISTENTE ===
+    
+    // === CENÁRIO 2: ATUALIZAR CLÍNICA EXISTENTE (Proteção contra Abas Ocultas) ===
     else if (orgId) {
-      const { error: updateError } = await supabase
-        .from('organizations')
-        .update(orgData)
-        .eq('id', orgId)
+      // Criamos um objeto dinâmico apenas com os campos que NÃO são nulos
+      const orgUpdates: any = {onboarding_completed: true}
+      
+      const addIfPresent = (key: string, formKey: string) => {
+        const value = formData.get(formKey)
+        // Se value for null, o input não estava na tela. Se for string vazia '', o usuário limpou.
+        if (value !== null) orgUpdates[key] = value
+      }
 
-      if (updateError) {
-        console.error('Erro Update Org:', updateError)
-        return { error: 'Erro ao atualizar dados da clínica.' }
+      addIfPresent('name', 'name')
+      addIfPresent('document', 'document')
+      addIfPresent('phone', 'phone')
+      addIfPresent('email', 'email')
+      addIfPresent('address', 'address')
+      addIfPresent('evolution_api_url', 'evolution_url')
+      addIfPresent('evolution_api_key', 'evolution_apikey')
+
+      // Só roda o update se tivermos algum campo para atualizar
+      if (Object.keys(orgUpdates).length > 0) {
+        const { error: updateError } = await supabase
+          .from('organizations')
+          .update(orgUpdates)
+          .eq('id', orgId)
+
+        if (updateError) {
+          console.error('Erro Update Org:', updateError)
+          return { error: 'Erro ao atualizar dados da clínica: ' + updateError.message }
+        }
       }
     }
 
     // === ATUALIZAR DADOS PESSOAIS (MÉDICO) ===
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update(profileData)
-      .eq('id', user.id)
+    const profileUpdates: any = {}
+    
+    const addProfileField = (key: string) => {
+        const val = formData.get(key)
+        if (val !== null) profileUpdates[key] = val
+    }
 
-    if (profileError) {
-      console.error('Erro Update Profile:', profileError)
-      return { error: 'Erro ao atualizar seu perfil.' }
+    addProfileField('full_name')
+    addProfileField('crm')
+
+    if (Object.keys(profileUpdates).length > 0) {
+        const { error: profileError } = await supabase
+        .from('profiles')
+        .update(profileUpdates)
+        .eq('id', user.id)
+
+        if (profileError) {
+        console.error('Erro Update Profile:', profileError)
+        return { error: 'Erro ao atualizar seu perfil.' }
+        }
     }
 
     revalidatePath('/configuracoes')

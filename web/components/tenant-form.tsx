@@ -28,16 +28,19 @@ export function TenantForm() {
     <form ref={formRef} action={handleSubmit} className="space-y-4">
       <div>
         <Label htmlFor="orgName">Nome da Clínica</Label>
+        <br></br>
         <Input id="orgName" name="orgName" placeholder="Ex: Clínica Saúde Vida" required />
       </div>
       
       <div>
         <Label htmlFor="email">Email de Acesso</Label>
+        <br></br>
         <Input id="email" name="email" type="email" placeholder="cliente@clinica.com" required />
       </div>
 
       <div>
         <Label htmlFor="password">Senha Inicial</Label>
+        <br></br>
         <Input id="password" name="password" type="text" placeholder="Senha forte" required />
       </div>
 

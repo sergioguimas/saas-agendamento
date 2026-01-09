@@ -12,7 +12,6 @@ export async function createOrganization(formData: FormData) {
   const name = formData.get('name') as string
   
   // Gera um slug simples: "Minha Clínica" -> "minha-clinica-x7z9"
-  // O sufixo aleatório evita duplicidade de slugs.
   const slug = name
     .toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, "") // Remove acentos

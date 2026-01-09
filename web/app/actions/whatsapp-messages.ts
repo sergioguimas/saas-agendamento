@@ -66,7 +66,7 @@ export async function sendAppointmentConfirmation(appointmentId: string) {
 
   // 6. Monta a mensagem final substituindo as variáveis
   const messageText = replaceVariables(template, {
-    name: appointment.customers.name.split(' ')[0], // Primeiro nome
+    name: appointment.customers.name.split(' ')[0],
     date: dateStr,
     time: timeStr,
     service: appointment.services?.title || 'Consulta',

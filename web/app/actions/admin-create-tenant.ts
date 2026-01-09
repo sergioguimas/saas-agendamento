@@ -39,8 +39,8 @@ export async function createTenant(formData: FormData) {
     const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
-      email_confirm: true, // Já cria confirmado, sem precisar de email de verificação
-      user_metadata: { full_name: 'Admin da Clínica' } // Gatilho inicial
+      email_confirm: true,
+      user_metadata: { full_name: 'Admin da Clínica' }
     })
 
     if (authError) throw authError
@@ -48,7 +48,6 @@ export async function createTenant(formData: FormData) {
     if (!authUser.user) throw new Error("Falha ao criar usuário Auth")
 
     // 3. Criar a Organização
-    // Como estamos usando a Service Role, podemos inserir direto no banco
     const slug = orgName.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Math.random().toString(36).substring(2, 7)
     
     const { data: org, error: orgError } = await supabaseAdmin
@@ -64,8 +63,6 @@ export async function createTenant(formData: FormData) {
     if (orgError) throw orgError
 
     // 4. Atualizar o Profile do usuário para ser DONO dessa nova organização
-    // A trigger 'handle_new_user' já deve ter rodado e criado o profile, 
-    // então vamos fazer um UPDATE.
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .update({

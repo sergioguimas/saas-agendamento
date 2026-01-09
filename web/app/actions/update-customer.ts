@@ -16,7 +16,7 @@ export async function updateCustomer(formData: FormData) {
   const address = formData.get('address') as string
   const notes = formData.get('notes') as string
   const birth_date = formData.get('birth_date') as string
-  const active = formData.get('active') === 'on' // Checkbox retorna 'on' se marcado
+  const active = formData.get('active') === 'on'
 
   const dataToUpdate: any = {
     name,
@@ -28,9 +28,8 @@ export async function updateCustomer(formData: FormData) {
     active: active
   }
 
-  // Só atualiza a data se ela for válida
   if (birth_date) {
-    dataToUpdate.birth_date = birth_date // Supabase aceita YYYY-MM-DD direto para colunas date
+    dataToUpdate.birth_date = birth_date
   } else {
     dataToUpdate.birth_date = null
   }

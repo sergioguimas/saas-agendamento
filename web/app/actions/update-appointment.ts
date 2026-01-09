@@ -12,8 +12,6 @@ export async function updateAppointment(formData: FormData) {
   const dateRaw = formData.get('date') as string
   const timeRaw = formData.get('time') as string
   
-  // Vamos recalcular o start_time e end_time baseados na nova data/hora
-  // Precisamos buscar a duração do serviço original
   const { data: currentAppointment } = await supabase
     .from('appointments')
     .select(`
@@ -43,7 +41,7 @@ export async function updateAppointment(formData: FormData) {
 
   if (error) return { error: 'Erro ao atualizar agendamento' }
 
-  // 3. Automação WhatsApp: Aviso de Mudança 🚀
+  // 3. Automação WhatsApp: Aviso de Mudança
   // @ts-ignore
   if (currentAppointment.clients?.phone) {
     try {

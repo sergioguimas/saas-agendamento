@@ -33,7 +33,7 @@ export default async function SetupPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Configuração Inicial</h1>
         <p className="text-muted-foreground">
-          Complete os dados da sua clínica para começar a usar o sistema.
+          Sua conta foi criada com sucesso. Por favor, confirme os dados da sua clínica para liberar o acesso ao painel.
         </p>
       </div>
 

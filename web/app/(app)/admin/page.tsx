@@ -9,7 +9,6 @@ export default async function NovoClientePage() {
 
   const MY_EMAIL = 'adm@adm.com' // Seu email de admin
 
-  // Se não estiver logado OU o email não for o do chefe:
   if (!user || user.email !== MY_EMAIL) {
     return redirect('/dashboard')
   }

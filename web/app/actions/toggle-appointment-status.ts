@@ -15,7 +15,6 @@ export async function toggleAppointmentStatus(appointmentId: string, newStatus: 
     return { error: error.message }
   }
 
-  // Revalida a agenda para refletir a mudança de cor/ícone imediatamente
   revalidatePath('/agendamentos')
   return { success: true }
 }

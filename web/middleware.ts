@@ -6,7 +6,6 @@ export default async function middleware(request: NextRequest) {
     request: { headers: request.headers },
   })
 
-  // 1. Conecta ao Supabase
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -22,53 +21,66 @@ export default async function middleware(request: NextRequest) {
     }
   )
 
-  // 2. Verifica Autenticação
   const { data: { user } } = await supabase.auth.getUser()
-
-  // 3. Definição de Rotas
   const pathname = request.nextUrl.pathname
   
-  // Ignora arquivos estáticos (Melhora muito a performance)
+  // Ignora rotas estáticas e API
   if (pathname.includes('.') || pathname.startsWith('/_next') || pathname.startsWith('/api')) {
     return response
   }
 
-  const isAuthPage = pathname === '/login' || pathname === '/signup'
+  const isAuthPage = pathname === '/login'
   const isSetupPage = pathname === '/setup'
   const isPublicRoute = pathname === '/'
 
-  // 4. Lógica de Redirecionamento e Segurança
   if (!user) {
-    // Se NÃO está logado e tenta acessar página interna
+    // Se não está logado e tenta acessar área privada
     if (!isAuthPage && !isPublicRoute) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
   } else {
-    // Se ESTÁ logado, verificamos se ele já tem organização configurada
+    // === LÓGICA DE ONBOARDING ATUALIZADA ===
+    let isOnboardingCompleted = false
     let hasOrganization = false
     
     try {
-      // Busca no banco novo usando a coluna CORRETA (organization_id singular)
       const { data: profile } = await supabase
         .from('profiles')
-        .select('organization_id')
+        .select(`
+          organization_id, 
+          organizations (
+            onboarding_completed
+          )
+        `)
         .eq('id', user.id)
         .single()
       
-      hasOrganization = !!profile?.organization_id
+      // Verifica se tem org vinculada
+      if (profile?.organization_id) {
+        hasOrganization = true
+        // Verifica se a flag está true no banco
+        // @ts-ignore
+        isOnboardingCompleted = !!profile.organizations?.onboarding_completed
+      }
 
     } catch (error) {
-      // Se der erro de conexão, assume false para não travar, mas loga o erro
-      console.error("Erro no Middleware (Perfil):", error)
+      console.error("Middleware Error:", error)
     }
 
-    // A. Usuário sem organização tenta acessar o painel -> Manda para Setup
+    // REGRA 1: Usuário sem Organização (Erro de sistema ou convite pendente) -> Manda pro Setup (ou tela de erro)
     if (!hasOrganization && !isSetupPage && !isPublicRoute) {
-      return NextResponse.redirect(new URL('/setup', request.url))
+       // Se a ideia é que APENAS o admin crie orgs, aqui talvez devesse ser uma página de "Contate o Suporte".
+       // Mas mantendo a lógica de setup:
+       return NextResponse.redirect(new URL('/setup', request.url))
     }
 
-    // B. Usuário já configurado tenta acessar Login ou Setup -> Manda para Dashboard
-    if (hasOrganization && (isAuthPage || isSetupPage)) {
+    // REGRA 2: Tem organização, mas NÃO completou o cadastro -> Força o Setup
+    if (hasOrganization && !isOnboardingCompleted && !isSetupPage) {
+       return NextResponse.redirect(new URL('/setup', request.url))
+    }
+
+    // REGRA 3: Já completou tudo e tenta voltar pro Login ou Setup -> Manda pro Dashboard
+    if (isOnboardingCompleted && (isAuthPage || isSetupPage)) {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
   }
@@ -78,13 +90,6 @@ export default async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Aplica o middleware em todas as rotas, EXCETO:
-     * - api (rotas de API)
-     * - _next/static (arquivos estáticos)
-     * - _next/image (otimização de imagem)
-     * - favicon.ico (ícone)
-     */
     '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 }

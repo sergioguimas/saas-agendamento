@@ -12,7 +12,6 @@ export async function updatePreferences(formData: FormData) {
   const open_hours_start = formData.get('open_hours_start') as string
   const open_hours_end = formData.get('open_hours_end') as string
   const appointment_duration = formData.get('appointment_duration')
-  // Captura os checkboxes (retorna array de strings, convertemos para number)
   const days_of_week = formData.getAll('days_of_week').map(d => parseInt(d as string))
   
   // Mensagens Personalizadas

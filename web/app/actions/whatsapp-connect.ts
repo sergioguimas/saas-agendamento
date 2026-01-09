@@ -64,13 +64,11 @@ export async function createWhatsappInstance(): Promise<WhatsappResponse> {
     }
 
     if (!createResponse.ok && !isAlreadyExists) {
-        // Se deu erro real (não é apenas duplicidade)
         console.error("Erro Evolution:", createData)
         return { error: "Erro ao criar instância na API." }
     }
 
     // 3. Se já existe ou acabou de criar, busca o QR Code
-    // Usamos o seu loop inteligente aqui
     const result = await fetchQrCodeLoop(instanceName, EVOLUTION_URL, API_KEY!)
 
     return result

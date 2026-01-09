@@ -55,8 +55,6 @@ export async function signUp(formData: FormData) {
 
 // Função de Criar Empresa
 export async function createCompany(formData: FormData) {
-  // CORREÇÃO CRÍTICA: 'as any' força o TypeScript a aceitar o cliente
-  // mesmo que ele não reconheça a tabela organizations nos tipos globais.
   const supabase = await createClient() as any 
   
   const { data: { user } } = await supabase.auth.getUser()

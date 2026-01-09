@@ -9,7 +9,7 @@ type RecordStatus = 'draft' | 'signed'
 export async function saveDraft(formData: FormData) {
   const supabase = await createClient()
   
-  // 1. Verificação de Autenticação (Resolve erro de string | undefined)
+  // 1. Verificação de Autenticação
   const { data: { user } } = await supabase.auth.getUser()
   if (!user || !user.id) {
     throw new Error("Usuário não autenticado")
@@ -22,7 +22,7 @@ export async function saveDraft(formData: FormData) {
     .eq('id', user.id)
     .single()
 
-  // 3. Verificação de Perfil e Organização (Resolve erro de string | null)
+  // 3. Verificação de Perfil e Organização
   if (!profile || !profile.organization_id) {
     throw new Error("Perfil não encontrado ou sem organização vinculada")
   }
@@ -35,9 +35,9 @@ export async function saveDraft(formData: FormData) {
   const dataToSave = {
     content,
     customer_id: customerId,
-    organization_id: profile.organization_id, // Agora o TS sabe que não é null
+    organization_id: profile.organization_id,
     professional_id: profile.id,
-    status: 'draft' as RecordStatus, // Força o tipo correto do Enum
+    status: 'draft' as RecordStatus,
     updated_at: new Date().toISOString()
   }
 

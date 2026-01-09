@@ -14,7 +14,7 @@ export async function createPatient(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Não autorizado' }
 
-  // 2. Buscar Perfil com organization_id (CORRIGIDO)
+  // 2. Buscar Perfil com organization_id
   const { data: profile } = await supabase
     .from('profiles')
     .select('organization_id') 
@@ -25,7 +25,7 @@ export async function createPatient(formData: FormData) {
     return { error: 'Perfil sem organização vinculada' }
   }
 
-  // 3. Salvar Paciente no Banco usando organization_id (CORRIGIDO)
+  // 3. Salvar Paciente no Banco usando organization_id
   const { error } = await supabase.from('customers').insert({
     name,
     email,

@@ -16,7 +16,7 @@ export async function cancelAppointment(appointmentId: string) {
       services ( title )
     `)
     .eq('id', appointmentId)
-    .single() as any // 'as any' ajuda aqui pois o join retorna array/objeto complexo
+    .single() as any
 
   if (!appointment) return { error: "Agendamento não encontrado" }
 
@@ -28,7 +28,7 @@ export async function cancelAppointment(appointmentId: string) {
 
   if (error) return { error: 'Erro ao cancelar agendamento' }
 
-  // 3. Enviar WhatsApp de Cancelamento 🚀
+  // 3. Enviar WhatsApp de Cancelamento
   if (appointment.customer_id) {
     const { data: client } = await supabase
       .from('customers')
@@ -82,7 +82,7 @@ export async function deleteAppointment(appointmentId: string) {
 
   if (error) return { error: 'Erro ao excluir agendamento' }
 
-  // 3. Enviar WhatsApp (Opcional na exclusão, mas bom para garantir) 🚀
+  // 3. Enviar WhatsApp
   if (appointment?.customer_id) {
     const { data: client } = await supabase
       .from('customers')
@@ -96,7 +96,6 @@ export async function deleteAppointment(appointmentId: string) {
             const dataOriginal = new Date(appointment.start_time)
             const dia = dataOriginal.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
             
-            // Mensagem sutilmente diferente para exclusão
             const message = `Olá ${client.name}, informamos que seu agendamento de *${nomeServico}* no dia ${dia} foi removido da nossa agenda.`
             
             await sendWhatsappMessage(client.phone, message)

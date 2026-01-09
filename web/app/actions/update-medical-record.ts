@@ -10,7 +10,7 @@ export async function updateMedicalRecord(recordId: string, content: string) {
 
   const { error } = await supabase
     .from('service_notes')
-    .update({ content }) // O tipo 'content' é validado aqui
+    .update({ content })
     .eq('id', recordId)
     .eq('profile_id', user.id)
 
