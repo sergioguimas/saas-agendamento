@@ -7,21 +7,21 @@ import { Building2, CalendarClock } from "lucide-react"
 export default async function ConfiguracoesPage() {
   const supabase = await createClient()
   
-  // 1. Busca Usuário
+  // 1. Busca Usuário e Perfil
   const { data: { user } } = await supabase.auth.getUser()
   if(!user) return <div>Não autorizado</div>
 
-  // 2. Busca Perfil
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
   
-  // 3. Busca Organização
+  // 2. Busca Organização
   let organization = null
   if (profile?.organization_id) {
     const { data } = await supabase.from('organizations').select('*').eq('id', profile.organization_id).single()
     organization = data
   }
 
-  // 4. Busca Configurações Operacionais (Horários e Mensagens)
+  // 3. Busca Configurações Operacionais (Settings)
+  // Nota: Se não existir, retornará null, o form deve lidar com isso ou criar default
   const { data: settings } = await supabase
     .from('organization_settings')
     .select('*')
@@ -35,6 +35,7 @@ export default async function ConfiguracoesPage() {
         <p className="text-muted-foreground">Gerencie os dados da clínica, conexão e automações.</p>
       </div>
 
+      {/* MACRO-ESTRUTURA: 2 ABAS PRINCIPAIS */}
       <Tabs defaultValue="geral" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-8 h-12">
           <TabsTrigger value="geral" className="text-base gap-2">
@@ -47,22 +48,22 @@ export default async function ConfiguracoesPage() {
           </TabsTrigger>
         </TabsList>
 
-        {/* ABA 1: Dados da Clínica, Perfil, Evolution API */}
-        <TabsContent value="geral">
+        {/* CONTEÚDO DA ABA 1: Passamos perfil e organização */}
+        <TabsContent value="geral" className="mt-0">
           <SettingsForm 
              profile={profile} 
              organization={organization} 
           />
         </TabsContent>
 
-        {/* ABA 2: Horários e Mensagens*/}
-        <TabsContent value="agenda">
-           <PreferencesForm 
-              settings={settings} 
-              organizationId={profile?.organization_id || ""} 
-            />
+        {/* CONTEÚDO DA ABA 2: Passamos settings e o ID da organização */}
+        <TabsContent value="agenda" className="mt-0">
+          <PreferencesForm 
+            settings={settings} 
+            organizationId={profile?.organization_id || ""}
+          />
         </TabsContent>
-
+        
       </Tabs>
     </div>
   )
