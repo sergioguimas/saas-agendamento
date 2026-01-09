@@ -98,7 +98,7 @@ export function SettingsForm({ profile, organization, templates }: any) {
 
         {/* ABA WHATSAPP (EVOLUTION) */}
         <TabsContent value="whatsapp">
-           <WhatsappSettings organization={organization || ''} />
+           <WhatsappSettings />
         </TabsContent>
 
 

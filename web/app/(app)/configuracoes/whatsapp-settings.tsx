@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { QrCode, Link, LogOut, Loader2, Smartphone } from "lucide-react"
 import { toast } from "sonner"
-// Importamos as funções do SEU arquivo
 import { createWhatsappInstance, deleteWhatsappInstance, getWhatsappStatus } from "@/app/actions/whatsapp-connect"
 
 export function WhatsappSettings() {
