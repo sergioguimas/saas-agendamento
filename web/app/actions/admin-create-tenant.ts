@@ -20,7 +20,7 @@ export async function createTenant(formData: FormData) {
   const supabase = await createServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   
-  const MY_EMAIL = 'seu-email-admin@exemplo.com' 
+  const MY_EMAIL = 'adm@adm.com' 
   
   if (!user || user.email !== MY_EMAIL) {
     return { error: 'Não autorizado. Apenas o admin pode criar tenants.' }

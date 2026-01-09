@@ -1,42 +1,27 @@
-'use client'
+import { createClient } from "@/utils/supabase/server"
+import { redirect } from "next/navigation"
+import { TenantForm } from "@/components/tenant-form"
 
-import { createTenant } from "@/app/actions/admin-create-tenant"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { toast } from "sonner"
+export default async function NovoClientePage() {
+  // 1. VERIFICAÇÃO DE SEGURANÇA (SERVER SIDE)
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-export default function NovoClientePage() {
-  async function handleSubmit(formData: FormData) {
-    const res = await createTenant(formData)
-    if (res.error) {
-      toast.error(res.error)
-    } else {
-      toast.success(res.message)
-    }
+  const MY_EMAIL = 'adm@adm.com' // Seu email de admin
+
+  // Se não estiver logado OU o email não for o do chefe:
+  if (!user || user.email !== MY_EMAIL) {
+    return redirect('/dashboard')
   }
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-6 border rounded-lg bg-card">
-      <h1 className="text-xl font-bold mb-4">Painel God Mode: Novo Cliente</h1>
-      <form action={handleSubmit} className="space-y-4">
-        <div>
-          <Label>Nome da Clínica</Label>
-          <Input name="orgName" placeholder="Ex: Clínica Saúde Vida" required />
-        </div>
-        
-        <div>
-          <Label>Email de Acesso (Login)</Label>
-          <Input name="email" type="email" placeholder="cliente@clinica.com" required />
-        </div>
-
-        <div>
-          <Label>Senha Inicial</Label>
-          <Input name="password" type="text" placeholder="Senha forte" required />
-        </div>
-
-        <Button type="submit" className="w-full">Criar Cliente & Organização</Button>
-      </form>
+    <div className="max-w-md mx-auto mt-10 p-6 border rounded-lg bg-card shadow-sm">
+      <div className="mb-6">
+        <h1 className="text-xl font-bold">Painel God Mode ⚡</h1>
+        <p className="text-sm text-muted-foreground">Criação de novos tenants (Clínicas)</p>
+      </div>
+      
+      <TenantForm />
     </div>
   )
 }
