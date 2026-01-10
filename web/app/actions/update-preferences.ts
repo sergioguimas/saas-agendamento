@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache"
 export async function updatePreferences(formData: FormData) {
   const supabase = await createClient()
 
-  const organization_id = formData.get('organization_id') as string
+  const organization_id = formData.get('organizationId') as string
   
   // Horários e Dias
   const open_hours_start = formData.get('open_hours_start') as string
